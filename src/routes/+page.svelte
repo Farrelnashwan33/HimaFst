@@ -212,7 +212,7 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-      {#each ['Sistem Informasi', 'Teknologi Pangan', 'Agribisnis', 'PWK', 'Biologi', 'Sains Data', 'Matematika', 'Statistika'] as prog, i}
+      {#each ['Sistem Informasi', 'Teknologi Pangan', 'Agribisnis', 'Perencanaan dan Wilayah Kota', 'Biologi', 'Sains Data', 'Matematika', 'Statistika'] as prog, i}
         <Card class="fade-up p-8 flex items-center justify-center text-center h-full min-h-[120px]" style="transition-delay: {(i % 4) * 100}ms;">
           <h3 class="text-xl font-bold text-[#4B5563]">{prog}</h3>
         </Card>

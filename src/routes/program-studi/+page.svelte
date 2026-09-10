@@ -5,7 +5,7 @@
     { name: 'Sistem Informasi', desc: 'Mempelajari pengembangan perangkat lunak, manajemen basis data, dan integrasi sistem teknologi bisnis.', color: 'from-blue-500/10 to-blue-500/5' },
     { name: 'Teknologi Pangan', desc: 'Inovasi pengolahan pangan, penjaminan mutu, dan pengembangan produk makanan modern.', color: 'from-orange-500/10 to-orange-500/5' },
     { name: 'Agribisnis', desc: 'Mengkaji aspek bisnis dan manajemen dalam industri pertanian serta inovasi rantai pasok.', color: 'from-green-500/10 to-green-500/5' },
-    { name: 'PWK', desc: 'Perencanaan Wilayah & Kota. Mendesain tata ruang, infrastruktur, dan pengembangan kota berkelanjutan.', color: 'from-purple-500/10 to-purple-500/5' },
+    { name: 'Perencanaan dan Wilayah Kota', desc: 'Mendesain tata ruang, infrastruktur, dan pengembangan kota berkelanjutan.', color: 'from-purple-500/10 to-purple-500/5' },
     { name: 'Biologi', desc: 'Eksplorasi ilmu hayati, biodiversitas, genetika, dan konservasi sumber daya alam.', color: 'from-emerald-500/10 to-emerald-500/5' },
     { name: 'Sains Data', desc: 'Analisis data berskala besar, machine learning, dan pengambilan keputusan berbasis algoritma.', color: 'from-indigo-500/10 to-indigo-500/5' },
     { name: 'Matematika', desc: 'Pemodelan matematika, komputasi numerik, dan analisis kuantitatif untuk pemecahan masalah.', color: 'from-rose-500/10 to-rose-500/5' },
