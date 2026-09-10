@@ -19,13 +19,13 @@
 
   const activities = [
     {
-      title: 'Anggota HIMA',
+      title: 'Pengurus HIMA',
       date: 'Periode 2026-2027',
-      category: 'Anggota',
-      description: 'Kenali lebih dekat daftar pengurus dan anggota dari berbagai divisi HIMA FST UT Bandung.',
+      category: 'Pengurus',
+      description: 'Kenali lebih dekat daftar pengurus dari berbagai divisi HIMA FST UT Bandung.',
       posterUrl: '',
       href: '/anggota',
-      buttonText: 'Lihat Anggota'
+      buttonText: 'Lihat Pengurus'
     },
     {
       title: 'FST Berkarya',
