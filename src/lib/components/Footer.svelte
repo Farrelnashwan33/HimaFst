@@ -26,7 +26,7 @@
           <li><a href="/#tentang" class="text-gray-500 hover:text-primary transition-colors font-medium">Tentang</a></li>
           <li><a href="/#divisi" class="text-gray-500 hover:text-primary transition-colors font-medium">Divisi</a></li>
           <li><a href="/#kegiatan" class="text-gray-500 hover:text-primary transition-colors font-medium">Kegiatan</a></li>
-          <li><a href="/gabung-hima" class="text-gray-500 hover:text-primary transition-colors font-medium">Gabung HIMA</a></li>
+          <li><a href="/gabung-hima" class="text-gray-500 hover:text-primary transition-colors font-medium">Gabung Himpunan Mahasiswa</a></li>
         </ul>
       </div>
       
@@ -34,8 +34,8 @@
       <div class="md:col-span-4 lg:col-span-2">
         <h3 class="text-dark font-bold mb-6 tracking-wide">Community</h3>
         <ul class="space-y-4">
-          <li><a href={siteConfig.fstGroup} target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-primary transition-colors font-medium flex items-center group">FST 2026 <span class="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">↗</span></a></li>
-          <li><a href={siteConfig.himaGroup} target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-primary transition-colors font-medium flex items-center group">HIMA FST <span class="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">↗</span></a></li>
+          <li><a href={siteConfig.fstGroup} target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-primary transition-colors font-medium flex items-center group">Fakultas Sains dan Teknologi 2026 <span class="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">↗</span></a></li>
+          <li><a href={siteConfig.himaGroup} target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-primary transition-colors font-medium flex items-center group">Himpunan Mahasiswa <span class="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">↗</span></a></li>
         </ul>
       </div>
 
@@ -44,7 +44,7 @@
         <h3 class="text-dark font-bold mb-6 tracking-wide">Contact</h3>
         <ul class="space-y-4">
           <li>
-            <a href={`https://wa.me/${siteConfig.adminWhatsapp}?text=${encodeURIComponent('Halo Admin HIMA FST, saya ingin mendapatkan informasi mengenai HIMA FST.')}`} 
+            <a href={`https://wa.me/${siteConfig.adminWhatsapp}?text=${encodeURIComponent('Halo Admin Himpunan Mahasiswa Fakultas Sains dan Teknologi, saya ingin mendapatkan informasi mengenai Himpunan Mahasiswa Fakultas Sains dan Teknologi.')}`} 
                target="_blank" 
                rel="noopener noreferrer" 
                class="text-gray-500 hover:text-primary transition-colors font-medium flex items-center group">
@@ -61,7 +61,7 @@
         &copy; {year} {siteConfig.name}. All rights reserved.
       </div>
       <div class="text-gray-400 text-sm font-medium">
-        Designed with 🧡 for HIMA FST
+        Designed with 🧡 for Himpunan Mahasiswa Fakultas Sains dan Teknologi
       </div>
     </div>
   </div>

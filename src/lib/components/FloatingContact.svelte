@@ -13,7 +13,7 @@
   <!-- WhatsApp Button -->
   <!-- svelte-ignore a11y_mouse_events_have_key_events -->
   <a 
-    href={`https://wa.me/${siteConfig.adminWhatsapp}?text=${encodeURIComponent('Halo Admin HIMA FST, saya ingin mendapatkan informasi mengenai HIMA FST.')}`}
+    href={`https://wa.me/${siteConfig.adminWhatsapp}?text=${encodeURIComponent('Halo Admin Himpunan Mahasiswa Fakultas Sains dan Teknologi, saya ingin mendapatkan informasi mengenai Himpunan Mahasiswa Fakultas Sains dan Teknologi.')}`}
     target="_blank"
     rel="noopener noreferrer"
     class="w-14 h-14 bg-primary text-white rounded-full shadow-xl hover:shadow-2xl hover:scale-110 flex items-center justify-center transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary/30"
