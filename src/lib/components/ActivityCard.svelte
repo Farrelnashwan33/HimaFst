@@ -1,16 +1,18 @@
 <script lang="ts">
   import Card from './Card.svelte';
   
-  let { title, date, description, posterUrl, category } = $props<{
+  let { title, date, description, posterUrl, category, href = "#", buttonText = "View Activity" } = $props<{
     title: string;
     date: string;
     description: string;
     posterUrl: string;
     category: string;
+    href?: string;
+    buttonText?: string;
   }>();
 </script>
 
-<div class="group relative bg-white rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 transition-all duration-500 hover:shadow-[0_20px_50px_rgb(0,0,0,0.08)] hover:-translate-y-2 flex flex-col h-full cursor-pointer">
+<a {href} class="group relative bg-white rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 transition-all duration-500 hover:shadow-[0_20px_50px_rgb(0,0,0,0.08)] hover:-translate-y-2 flex flex-col h-full cursor-pointer block">
   <div class="relative h-64 overflow-hidden bg-gray-100">
     {#if posterUrl}
       <img src={posterUrl} alt={title} class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -33,10 +35,10 @@
     <p class="text-gray-500 mb-8 flex-grow leading-relaxed line-clamp-3">{description}</p>
     
     <div class="flex items-center text-dark font-bold group-hover:text-primary transition-colors">
-      <span class="mr-2">View Activity</span>
+      <span class="mr-2">{buttonText}</span>
       <svg class="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
       </svg>
     </div>
   </div>
-</div>
+</a>

@@ -19,18 +19,22 @@
 
   const activities = [
     {
-      title: 'Workshop Web Development',
-      date: '15 September 2026',
-      category: 'Workshop',
-      description: 'Pelatihan intensif pembuatan website modern menggunakan SvelteKit dan TailwindCSS untuk mahasiswa FST.',
-      posterUrl: ''
+      title: 'Anggota HIMA',
+      date: 'Periode 2026-2027',
+      category: 'Anggota',
+      description: 'Kenali lebih dekat daftar pengurus dan anggota dari berbagai divisi HIMA FST UT Bandung.',
+      posterUrl: '',
+      href: '/anggota',
+      buttonText: 'Lihat Anggota'
     },
     {
       title: 'FST Berkarya',
       date: '1-10 Oktober 2026',
       category: 'Competition',
       description: 'Ajang kompetisi kreativitas dan inovasi mahasiswa FST dalam bidang teknologi dan sains terapan.',
-      posterUrl: ''
+      posterUrl: '',
+      href: '#',
+      buttonText: 'View Activity'
     }
   ];
 
