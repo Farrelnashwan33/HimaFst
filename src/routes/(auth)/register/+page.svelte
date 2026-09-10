@@ -61,12 +61,7 @@
       <div class="grid grid-cols-2 gap-4">
         <div class="space-y-1">
           <label for="programStudi" class="block text-sm font-semibold text-gray-700">Program Studi</label>
-          <select id="programStudi" name="programStudi" required class="block w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/50 focus:border-[#0f4c81] transition-all sm:text-sm">
-            <option value="" disabled selected>Pilih Prodi</option>
-            {#each data.programStudi as prodi}
-              <option value={prodi.id} selected={form?.programStudi == prodi.id}>{prodi.name}</option>
-            {/each}
-          </select>
+          <input id="programStudi" name="programStudi" type="text" required value={form?.programStudi ?? ''} placeholder="Contoh: Sistem Informasi" class="appearance-none block w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/50 focus:border-[#0f4c81] transition-all sm:text-sm">
         </div>
 
         <div class="space-y-1">

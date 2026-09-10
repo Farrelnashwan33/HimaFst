@@ -4,18 +4,7 @@ import { hashPassword } from '$lib/server/auth';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async () => {
-  try {
-    const db = getDb();
-    const [prodiRows]: any = await db.query('SELECT id, name FROM program_studi ORDER BY name ASC');
-    return {
-      programStudi: prodiRows
-    };
-  } catch (e) {
-    console.error("DB error during load:", e);
-    return {
-      programStudi: []
-    };
-  }
+  return {};
 };
 
 export const actions: Actions = {
@@ -78,7 +67,7 @@ export const actions: Actions = {
         // Insert profile
         await connection.query(
           `INSERT INTO student_profiles 
-           (user_id, full_name, nim, whatsapp, program_studi_id, semester) 
+           (user_id, full_name, nim, whatsapp, program_studi, semester) 
            VALUES (?, ?, ?, ?, ?, ?)`,
           [userId, fullName, nim, whatsapp, programStudi, semester]
         );

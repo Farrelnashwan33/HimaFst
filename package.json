@@ -37,8 +37,8 @@
 	},
 	"dependencies": {
 		"@sveltejs/adapter-vercel": "^6.3.4",
+		"@vercel/postgres": "^0.10.0",
 		"bcrypt": "^6.0.0",
-		"dotenv": "^17.4.2",
-		"mysql2": "^3.24.4"
+		"dotenv": "^17.4.2"
 	}
 }
