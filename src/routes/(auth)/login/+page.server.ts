@@ -27,7 +27,7 @@ export const actions: Actions = {
         return fail(403, { email, error: 'Access denied.' });
       }
 
-      const validPassword = await verifyPassword(password, user.password_hash);
+      const validPassword = await verifyPassword(password, user.password);
       if (!validPassword) {
         return fail(400, { email, error: 'Invalid email or password' });
       }
