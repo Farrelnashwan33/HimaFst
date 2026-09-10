@@ -1,54 +1,26 @@
-import { createPool, VercelPool } from '@vercel/postgres';
-import { building } from '$app/environment';
+import mysql from 'mysql2/promise';
 import { env } from '$env/dynamic/private';
+import { building } from '$app/environment';
 
-let pool: VercelPool | null = null;
-
-// Helper to translate MySQL queries to Postgres queries
-function translateQuery(sqlString: string): string {
-  let i = 1;
-  // Replace all '?' with '$1', '$2', etc.
-  let translated = sqlString.replace(/\?/g, () => `$${i++}`);
-  // Replace CURDATE() with CURRENT_DATE
-  translated = translated.replace(/CURDATE\(\)/gi, 'CURRENT_DATE');
-  return translated;
-}
+let pool: mysql.Pool | null = null;
 
 export function getDb() {
   if (building) {
-    return {} as any;
+    // Return a dummy object during build to prevent connection errors
+    return {} as mysql.Pool;
   }
   
   if (!pool) {
-    // Automatically uses process.env.POSTGRES_URL or env.POSTGRES_URL
-    pool = createPool({
-      connectionString: env.POSTGRES_URL || process.env.POSTGRES_URL,
+    pool = mysql.createPool({
+      host: env.DB_HOST || 'localhost',
+      port: Number(env.DB_PORT) || 8889, // MAMP Default
+      user: env.DB_USER || 'root',
+      password: env.DB_PASSWORD || 'root', // MAMP Default
+      database: env.DB_DATABASE || 'himafst_portal',
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0
     });
   }
-
-  // Create a wrapper that acts like mysql2
-  const wrapper = {
-    query: async (sqlString: string, params: any[] = []) => {
-      const pgSql = translateQuery(sqlString);
-      const result = await pool!.query(pgSql, params);
-      // Return as [rows, fields] format exactly like mysql2
-      return [result.rows, result.fields];
-    },
-    getConnection: async () => {
-      const client = await pool!.connect();
-      return {
-        query: async (sqlString: string, params: any[] = []) => {
-          const pgSql = translateQuery(sqlString);
-          const result = await client.query(pgSql, params);
-          return [result.rows, result.fields];
-        },
-        beginTransaction: () => client.query('BEGIN'),
-        commit: () => client.query('COMMIT'),
-        rollback: () => client.query('ROLLBACK'),
-        release: () => client.release()
-      };
-    }
-  };
-
-  return wrapper;
+  return pool;
 }
