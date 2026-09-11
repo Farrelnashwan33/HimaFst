@@ -1,8 +1,8 @@
-import { createClient, VercelClient } from '@vercel/postgres';
+import { Pool } from 'pg';
 import { building } from '$app/environment';
 import { env } from '$env/dynamic/private';
 
-let client: VercelClient | null = null;
+let pool: Pool | null = null;
 
 // Helper to translate MySQL queries to Postgres queries
 function translateQuery(sqlString: string): string {
@@ -19,42 +19,45 @@ export function getDb() {
     return {} as any;
   }
   
-  if (!client) {
+  if (!pool) {
     const connectionString = env.POSTGRES_URL || process.env.POSTGRES_URL || env.DATABASE_URL || process.env.DATABASE_URL;
     if (!connectionString) {
       const allKeys = Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('KEY'));
       throw new Error(`Database belum terhubung di Vercel Dashboard! Tidak ada URL. Variabel yang ada: ${allKeys.join(', ')}`);
     }
-    client = createClient({
+    // Create a strict connection pool with timeouts to prevent hanging in Serverless
+    pool = new Pool({
       connectionString: connectionString,
+      connectionTimeoutMillis: 5000,
+      idleTimeoutMillis: 5000,
+      max: 10,
     });
   }
 
   // Create a wrapper that acts like mysql2
   const wrapper = {
     query: async (sqlString: string, params: any[] = []) => {
-      // Ensure client is connected before querying
-      try { await client!.connect(); } catch (e) {}
       const pgSql = translateQuery(sqlString);
-      const result = await client!.query(pgSql, params);
+      const result = await pool!.query(pgSql, params);
       return [result.rows, result.fields];
     },
     getConnection: async () => {
-      try { await client!.connect(); } catch (e) {}
+      const client = await pool!.connect();
       return {
         query: async (sqlString: string, params: any[] = []) => {
           const pgSql = translateQuery(sqlString);
-          const result = await client!.query(pgSql, params);
+          const result = await client.query(pgSql, params);
           return [result.rows, result.fields];
         },
-        beginTransaction: () => client!.query('BEGIN'),
-        commit: () => client!.query('COMMIT'),
-        rollback: () => client!.query('ROLLBACK'),
-        release: () => {} // client is reused, no release
+        beginTransaction: () => client.query('BEGIN'),
+        commit: () => client.query('COMMIT'),
+        rollback: () => client.query('ROLLBACK'),
+        release: () => client.release()
       };
     }
   };
 
   return wrapper;
 }
+
 
