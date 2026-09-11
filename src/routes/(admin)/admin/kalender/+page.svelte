@@ -18,7 +18,7 @@
   let searchQuery = $state('');
   let selectedCategory = $state('ALL');
 
-  const categories = ['Webinar', 'Workshop', 'Festival', 'Rapat', 'Lomba', 'Akademik', 'Lainnya'];
+  const categories = ['Webinar', 'Workshop', 'Tuton', 'Festival', 'Rapat', 'Lomba', 'Akademik', 'Lainnya'];
   const statuses = ['Mendatang', 'Sedang Berlangsung', 'Selesai'];
 
   function openCreateModal() {
