@@ -6,8 +6,8 @@ import type { Actions } from './$types';
 export const actions: Actions = {
   default: async ({ request, cookies }) => {
     const data = await request.formData();
-    const email = data.get('email') as string;
-    const password = data.get('password') as string;
+    const email = (data.get('email') as string)?.trim().toLowerCase();
+    const password = (data.get('password') as string)?.trim();
 
     if (!email || !password) {
       return fail(400, { email, error: 'Email dan password wajib diisi' });
@@ -15,22 +15,23 @@ export const actions: Actions = {
 
     try {
       const db = getDb();
-      const [rows]: any = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+      const [rows]: any = await db.query('SELECT * FROM users WHERE LOWER(email) = LOWER(?)', [email]);
       
-      if (rows.length === 0) {
-        return fail(400, { email, error: 'Email atau password tidak valid' });
+      if (!rows || rows.length === 0) {
+        return fail(400, { email, error: 'Email atau password salah' });
       }
 
       const user = rows[0];
+      const role = user.role?.toLowerCase();
 
-      if (user.role !== 'admin') {
-        return fail(403, { email, error: 'Akses ditolak. Memerlukan hak akses Administrator.' });
+      if (role !== 'admin' && role !== 'pengurus_hima' && role !== 'super_admin') {
+        return fail(403, { email, error: 'Akses ditolak. Akun ini tidak memiliki hak akses Administrator.' });
       }
 
       const userHash = user.password || user.password_hash;
       const validPassword = userHash ? await verifyPassword(password, userHash) : false;
       if (!validPassword) {
-        return fail(400, { email, error: 'Email atau password tidak valid' });
+        return fail(400, { email, error: 'Email atau password salah' });
       }
 
       const sessionId = await createSession(user.id);
@@ -52,4 +53,3 @@ export const actions: Actions = {
     throw redirect(302, '/admin/dashboard');
   }
 };
-
