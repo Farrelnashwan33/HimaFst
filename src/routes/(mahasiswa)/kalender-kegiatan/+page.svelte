@@ -1,7 +1,7 @@
 <script lang="ts">
   import { siteConfig } from '$lib/config/site';
 
-  const events: any[] = [];
+  let { data } = $props();
 </script>
 
 <svelte:head>
@@ -23,7 +23,7 @@
   </div>
 
   <div class="relative border-l-2 border-gray-100 ml-4 md:ml-0 md:border-none space-y-8">
-    {#each events as event}
+    {#each data.events as event}
       <div class="relative md:grid md:grid-cols-5 md:gap-8 items-start group">
         <!-- Desktop Timeline Dot -->
         <div class="hidden md:flex flex-col items-center col-span-1 pt-1">
@@ -37,18 +37,30 @@
         <div class="md:col-span-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 group-hover:border-primary/30 group-hover:shadow-md transition-all ml-6 md:ml-0">
           <div class="flex flex-wrap items-center gap-3 mb-3">
             <span class="px-3 py-1 bg-gray-50 text-gray-600 rounded-lg text-xs font-bold uppercase tracking-wider border border-gray-100">
-              {event.category}
+              {event.category || 'Kegiatan'}
             </span>
             <span class="text-sm font-semibold text-primary flex items-center gap-1.5">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-              {event.date}
+              {new Date(event.event_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
             </span>
+            {#if event.event_time}
+              <span class="text-xs font-medium text-gray-400">
+                • {event.event_time}
+              </span>
+            {/if}
+            {#if event.location}
+              <span class="text-xs font-medium text-gray-400">
+                • {event.location}
+              </span>
+            {/if}
           </div>
           <h3 class="text-xl font-bold text-dark mb-2">{event.title}</h3>
-          <p class="text-gray-500 leading-relaxed mb-4 text-sm sm:text-base">{event.description}</p>
+          {#if event.description}
+            <p class="text-gray-500 leading-relaxed mb-4 text-sm sm:text-base">{event.description}</p>
+          {/if}
           <div class="inline-flex items-center gap-2 text-xs font-bold px-2.5 py-1 rounded-md {event.status === 'Sedang Berlangsung' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'}">
             <span class="w-1.5 h-1.5 rounded-full {event.status === 'Sedang Berlangsung' ? 'bg-green-500 animate-pulse' : 'bg-orange-500'}"></span>
-            {event.status}
+            {event.status || 'Mendatang'}
           </div>
         </div>
       </div>

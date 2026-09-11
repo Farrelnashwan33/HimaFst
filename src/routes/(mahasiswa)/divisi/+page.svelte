@@ -1,15 +1,7 @@
 <script lang="ts">
   import { siteConfig } from '$lib/config/site';
-  
-  const divisions = [
-    { title: 'Ketua', description: 'Pemimpin dan penanggung jawab seluruh kegiatan organisasi.', icon: '👑' },
-    { title: 'Wakil', description: 'Membantu ketua dalam menjalankan tugas dan fungsi organisasi.', icon: '🤝' },
-    { title: 'Bendahara', description: 'Pengelolaan keuangan dan administrasi pendanaan organisasi.', icon: '💰' },
-    { title: 'Sekretaris', description: 'Pengelolaan administrasi kesekretariatan dan tata usaha.', icon: '📝' },
-    { title: 'Humas', description: 'Hubungan masyarakat dan komunikasi pihak eksternal.', icon: '📢' },
-    { title: 'PSDM', description: 'Pengembangan sumber daya mahasiswa untuk menciptakan kader yang berkualitas.', icon: '🎓' },
-    { title: 'Medinfo', description: 'Informasi, komunikasi, teknologi, dan pengelolaan media organisasi.', icon: '💻' },
-  ];
+
+  let { data } = $props();
 </script>
 
 <svelte:head>
@@ -32,13 +24,20 @@
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-    {#each divisions as div}
+    {#each data.divisions as div}
       <div class="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 hover:border-primary/30 hover:shadow-md transition-all duration-300 group cursor-pointer flex flex-col h-full">
         <div class="w-14 h-14 flex items-center justify-center bg-gray-50 rounded-xl text-3xl mb-6 group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300">
-          {div.icon}
+          {div.icon || '💼'}
         </div>
-        <h3 class="text-xl font-bold text-dark mb-2 group-hover:text-primary transition-colors">{div.title}</h3>
-        <p class="text-sm text-gray-500 leading-relaxed flex-grow">{div.description}</p>
+        <h3 class="text-xl font-bold text-dark mb-1 group-hover:text-primary transition-colors">{div.name}</h3>
+        {#if div.leader}
+          <div class="text-xs font-semibold text-primary mb-3">Koordinator: {div.leader}</div>
+        {/if}
+        <p class="text-sm text-gray-500 leading-relaxed flex-grow">{div.description || 'Divisi dalam kepengurusan HIMA FST.'}</p>
+      </div>
+    {:else}
+      <div class="col-span-full bg-white p-12 text-center rounded-2xl shadow-sm border border-gray-100">
+        <p class="text-gray-500">Belum ada divisi aktif yang ditampilkan.</p>
       </div>
     {/each}
   </div>

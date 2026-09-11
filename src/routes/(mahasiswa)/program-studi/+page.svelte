@@ -1,16 +1,18 @@
 <script lang="ts">
   import Card from '$lib/components/Card.svelte';
   import { siteConfig } from '$lib/config/site';
-  
-  const programs = [
-    { name: 'Sistem Informasi', desc: 'Mempelajari pengembangan perangkat lunak, manajemen basis data, dan integrasi sistem teknologi bisnis.', color: 'from-blue-500/10 to-blue-500/5' },
-    { name: 'Teknologi Pangan', desc: 'Inovasi pengolahan pangan, penjaminan mutu, dan pengembangan produk makanan modern.', color: 'from-orange-500/10 to-orange-500/5' },
-    { name: 'Agribisnis', desc: 'Mengkaji aspek bisnis dan manajemen dalam industri pertanian serta inovasi rantai pasok.', color: 'from-green-500/10 to-green-500/5' },
-    { name: 'Perencanaan dan Wilayah Kota', desc: 'Mendesain tata ruang, infrastruktur, dan pengembangan kota berkelanjutan.', color: 'from-purple-500/10 to-purple-500/5' },
-    { name: 'Biologi', desc: 'Eksplorasi ilmu hayati, biodiversitas, genetika, dan konservasi sumber daya alam.', color: 'from-emerald-500/10 to-emerald-500/5' },
-    { name: 'Sains Data', desc: 'Analisis data berskala besar, machine learning, dan pengambilan keputusan berbasis algoritma.', color: 'from-indigo-500/10 to-indigo-500/5' },
-    { name: 'Matematika', desc: 'Pemodelan matematika, komputasi numerik, dan analisis kuantitatif untuk pemecahan masalah.', color: 'from-rose-500/10 to-rose-500/5' },
-    { name: 'Statistika', desc: 'Pengumpulan, pengolahan, dan interpretasi data statistik untuk riset dan industri.', color: 'from-cyan-500/10 to-cyan-500/5' }
+
+  let { data } = $props();
+
+  const colorPalettes = [
+    'from-blue-500/10 to-blue-500/5',
+    'from-orange-500/10 to-orange-500/5',
+    'from-green-500/10 to-green-500/5',
+    'from-purple-500/10 to-purple-500/5',
+    'from-emerald-500/10 to-emerald-500/5',
+    'from-indigo-500/10 to-indigo-500/5',
+    'from-rose-500/10 to-rose-500/5',
+    'from-cyan-500/10 to-cyan-500/5'
   ];
 </script>
 
@@ -35,25 +37,29 @@
         Program Studi<br/><span class="text-gray-400">di Fakultas Sains dan Teknologi UT Bandung.</span>
       </h1>
       <p class="text-base sm:text-lg text-gray-500 leading-relaxed font-normal">
-        Kenali lebih dekat 8 program studi unggulan yang tergabung dalam keluarga besar Fakultas Sains dan Teknologi Universitas Terbuka Bandung.
+        Kenali lebih dekat seluruh program studi unggulan yang tergabung dalam keluarga besar Fakultas Sains dan Teknologi Universitas Terbuka Bandung.
       </p>
     </div>
 
     <!-- Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {#each programs as prog, i}
+      {#each data.programs as prog, i}
         <div class="fade-up" style="transition-delay: {i * 75}ms;">
           <Card class="h-full flex flex-col p-8 bg-white border border-gray-100 hover:border-primary/20 hover:shadow-xl transition-all duration-300 group">
-            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br {prog.color} mb-6 flex items-center justify-center border border-white/50 group-hover:scale-110 transition-transform duration-300">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br {colorPalettes[i % colorPalettes.length]} mb-6 flex items-center justify-center border border-white/50 group-hover:scale-110 transition-transform duration-300">
               <span class="text-xl font-black text-dark/70 group-hover:text-primary transition-colors">{prog.name.charAt(0)}</span>
             </div>
             
             <h3 class="text-xl font-bold text-dark mb-3 group-hover:text-primary transition-colors">{prog.name}</h3>
             
             <p class="text-sm text-gray-500 leading-relaxed flex-grow font-normal">
-              {prog.desc}
+              {prog.description || 'Program studi di Fakultas Sains dan Teknologi Universitas Terbuka.'}
             </p>
           </Card>
+        </div>
+      {:else}
+        <div class="col-span-full bg-white p-12 text-center rounded-2xl shadow-sm border border-gray-100">
+          <p class="text-gray-500">Belum ada program studi aktif yang ditampilkan.</p>
         </div>
       {/each}
     </div>

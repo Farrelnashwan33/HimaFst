@@ -5,8 +5,25 @@ import { fail } from '@sveltejs/kit';
 export const load: PageServerLoad = async () => {
 	const db = getDb();
 	try {
-		const [rows]: any = await db.query(`SELECT * FROM aspirations ORDER BY created_at DESC`);
-		return { items: rows as any[] };
+		const [chats]: any = await db.query(`
+			SELECT 
+				c.id, 
+				c.user_id, 
+				c.message, 
+				c.is_read, 
+				c.reply, 
+				c.created_at, 
+				u.name as user_name, 
+				u.email as user_email, 
+				sp.nim, 
+				sp.program_studi, 
+				sp.whatsapp 
+			FROM chats c
+			LEFT JOIN users u ON c.user_id = u.id
+			LEFT JOIN student_profiles sp ON u.id = sp.user_id
+			ORDER BY c.created_at DESC
+		`);
+		return { items: chats as any[] };
 	} catch (e) {
 		console.error(e);
 		return { items: [] };
@@ -14,25 +31,24 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions: Actions = {
-	updateStatus: async ({ request, locals }) => {
+	reply: async ({ request, locals }) => {
 		const db = getDb();
 		const data = await request.formData();
 		const id = data.get('id');
-		const status = (data.get('status') as string)?.trim() || 'BARU';
-		const reply = (data.get('reply') as string)?.trim() || null;
+		const reply = (data.get('reply') as string)?.trim();
 
-		if (!id) return fail(400, { error: 'ID tidak valid' });
+		if (!id || !reply) return fail(400, { error: 'ID dan Pesan balasan wajib diisi' });
 
 		try {
 			await db.query(
-				`UPDATE aspirations SET status = $1, reply = COALESCE($2, reply) WHERE id = $3`,
-				[status, reply, id]
+				`UPDATE chats SET reply = $1, is_read = 1 WHERE id = $2`,
+				[reply, id]
 			);
 
 			if (locals.user?.id) {
 				await db.query(
 					'INSERT INTO admin_activity_logs (admin_id, action, module, description) VALUES ($1, $2, $3, $4)',
-					[locals.user.id, 'UPDATE', 'Aspirasi Mahasiswa', `Mengubah status aspirasi ID: ${id} menjadi ${status}`]
+					[locals.user.id, 'REPLY', 'Chat Admin', `Membalas pesan chat ID: ${id}`]
 				);
 			}
 
@@ -42,28 +58,15 @@ export const actions: Actions = {
 		}
 	},
 
-	reply: async ({ request, locals }) => {
+	markRead: async ({ request }) => {
 		const db = getDb();
 		const data = await request.formData();
 		const id = data.get('id');
-		const reply = (data.get('reply') as string)?.trim();
-		const status = (data.get('status') as string)?.trim() || 'DIPROSES';
 
-		if (!id || !reply) return fail(400, { error: 'ID dan Tanggapan wajib diisi' });
+		if (!id) return fail(400, { error: 'ID tidak valid' });
 
 		try {
-			await db.query(
-				`UPDATE aspirations SET reply = $1, status = $2 WHERE id = $3`,
-				[reply, status, id]
-			);
-
-			if (locals.user?.id) {
-				await db.query(
-					'INSERT INTO admin_activity_logs (admin_id, action, module, description) VALUES ($1, $2, $3, $4)',
-					[locals.user.id, 'REPLY', 'Aspirasi Mahasiswa', `Membalas aspirasi ID: ${id}`]
-				);
-			}
-
+			await db.query(`UPDATE chats SET is_read = 1 WHERE id = $1`, [id]);
 			return { success: true };
 		} catch (e: any) {
 			return fail(500, { error: e.message });
@@ -77,12 +80,12 @@ export const actions: Actions = {
 		if (!id) return fail(400, { error: 'ID tidak valid' });
 
 		try {
-			await db.query('DELETE FROM aspirations WHERE id = $1', [id]);
+			await db.query('DELETE FROM chats WHERE id = $1', [id]);
 
 			if (locals.user?.id) {
 				await db.query(
 					'INSERT INTO admin_activity_logs (admin_id, action, module, description) VALUES ($1, $2, $3, $4)',
-					[locals.user.id, 'DELETE', 'Aspirasi Mahasiswa', `Menghapus aspirasi ID: ${id}`]
+					[locals.user.id, 'DELETE', 'Chat Admin', `Menghapus chat ID: ${id}`]
 				);
 			}
 
