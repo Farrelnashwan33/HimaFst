@@ -172,39 +172,59 @@
     <!-- Right Column (Sidebar Content) -->
     <div class="space-y-8 sm:space-y-10">
       
-
-
       <!-- Hall of Fame -->
       <section>
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-xl sm:text-2xl font-black text-dark">Hall of Fame</h2>
+          <a href="/prestasi" class="text-sm font-semibold text-primary hover:text-primary-700">Lihat Semua</a>
         </div>
-        <!-- Simplified slider/stack effect for Hall of fame -->
-        <div class="relative bg-gradient-to-br from-[#FFF6ED] to-white rounded-2xl p-6 border border-primary/10 shadow-[0_8px_24px_rgba(255,117,31,0.08)] overflow-hidden">
-          <div class="absolute top-0 right-0 p-4 opacity-10 text-5xl">🏆</div>
-          
-          <div class="mb-4">
-            <span class="inline-block px-2.5 py-1 bg-yellow-100 text-yellow-700 text-[10px] font-bold uppercase tracking-widest rounded mb-2">PENGHARGAAN</span>
-            <h4 class="text-lg font-black text-dark leading-tight">Juara 1 Lomba Produk Inovatif</h4>
-            <p class="text-xs text-gray-500 mt-1 font-medium">DISPORSENI Nasional UT 2026</p>
-          </div>
 
-          <div class="space-y-3 mt-6">
-            {#each (data.achievements || []) as person}
-              <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-white/60 transition-colors">
-                <div class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden shadow-sm flex-shrink-0">
-                  <img src={person.image_url || `https://ui-avatars.com/api/?name=${person.student_name}&background=random`} alt={person.student_name} class="w-full h-full object-cover" />
+        {#if (data.featuredAchievements || []).length === 0}
+          <!-- Empty State -->
+          <div class="bg-gradient-to-br from-[#FFF6ED] to-white rounded-2xl p-8 border border-primary/10 text-center">
+            <div class="text-4xl mb-3">🏆</div>
+            <p class="text-sm font-semibold text-gray-500">Belum ada prestasi unggulan.</p>
+            <p class="text-xs text-gray-400 mt-1">Admin dapat menambahkan prestasi dari halaman manajemen.</p>
+          </div>
+        {:else}
+          <!-- Featured Achievement Cards -->
+          <div class="space-y-4">
+            {#each (data.featuredAchievements || []) as achievement}
+              <a href={`/prestasi/${achievement.id}`} class="block relative bg-gradient-to-br from-[#FFF6ED] to-white rounded-2xl p-6 border border-primary/10 shadow-[0_8px_24px_rgba(255,117,31,0.08)] overflow-hidden hover:shadow-[0_12px_30px_rgba(255,117,31,0.15)] transition-all hover:-translate-y-0.5">
+                <div class="absolute top-0 right-0 p-4 opacity-10 text-5xl">🏆</div>
+                
+                <div class="flex items-start gap-4 relative z-10">
+                  <!-- Avatar -->
+                  <div class="w-14 h-14 rounded-xl bg-gray-200 overflow-hidden shadow-sm flex-shrink-0">
+                    {#if achievement.image_url}
+                      <img src={achievement.image_url} alt={achievement.student_name} class="w-full h-full object-cover" />
+                    {:else}
+                      <img 
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(achievement.student_name)}&background=ff751f&color=fff&bold=true`} 
+                        alt={achievement.student_name} 
+                        class="w-full h-full object-cover" 
+                      />
+                    {/if}
+                  </div>
+
+                  <div class="flex-grow min-w-0">
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                      <span class="inline-block px-2.5 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold uppercase tracking-widest rounded">PENGHARGAAN</span>
+                      {#if achievement.level}
+                        <span class="inline-block px-2.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase tracking-widest rounded">{achievement.level}</span>
+                      {/if}
+                    </div>
+                    <h4 class="text-base font-black text-dark leading-tight truncate">{achievement.title}</h4>
+                    <p class="text-sm font-semibold text-primary mt-0.5">{achievement.student_name}</p>
+                    {#if achievement.award_date}
+                      <p class="text-xs text-gray-400 mt-1">{new Date(achievement.award_date).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}</p>
+                    {/if}
+                  </div>
                 </div>
-                <div>
-                  <h5 class="text-sm font-bold text-dark">{person.student_name}</h5>
-                  <p class="text-[10px] font-bold text-primary uppercase tracking-wider">{person.award_name}</p>
-                </div>
-              </div>
-            {:else}
-              <p class="text-xs text-gray-500 text-center py-4">Belum ada data prestasi.</p>
+              </a>
             {/each}
           </div>
-        </div>
+        {/if}
       </section>
 
       <!-- Quick Access -->

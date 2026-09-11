@@ -1,7 +1,5 @@
 import { getDb } from '$lib/server/db';
 import { json } from '@sveltejs/kit';
-import fs from 'fs';
-import path from 'path';
 
 export async function GET() {
   try {
@@ -15,7 +13,7 @@ export async function GET() {
     
     // SQL Queries embedded directly to avoid file reading issues on Vercel
     const queries = [
-      `CREATE TABLE users (
+      `CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL UNIQUE,
@@ -24,7 +22,7 @@ export async function GET() {
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )`,
-      `CREATE TABLE student_profiles (
+      `CREATE TABLE IF NOT EXISTS student_profiles (
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL UNIQUE,
         nim VARCHAR(50) DEFAULT NULL,
@@ -36,7 +34,7 @@ export async function GET() {
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_student_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
       )`,
-      `CREATE TABLE admin_profiles (
+      `CREATE TABLE IF NOT EXISTS admin_profiles (
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL UNIQUE,
         position VARCHAR(255) DEFAULT NULL,
@@ -44,17 +42,17 @@ export async function GET() {
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_admin_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
       )`,
-      `CREATE TABLE announcements (
+      `CREATE TABLE IF NOT EXISTS announcements (
         id SERIAL PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         content TEXT NOT NULL,
         author_id INT DEFAULT NULL,
-        is_published BOOLEAN NOT NULL DEFAULT TRUE,
+        is_published BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_announcement_author FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE SET NULL
       )`,
-      `CREATE TABLE events (
+      `CREATE TABLE IF NOT EXISTS events (
         id SERIAL PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         description TEXT DEFAULT NULL,
@@ -63,18 +61,23 @@ export async function GET() {
         location VARCHAR(255) DEFAULT NULL,
         category VARCHAR(100) DEFAULT NULL,
         status VARCHAR(100) DEFAULT 'Mendatang',
+        is_published BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )`,
-      `CREATE TABLE achievements (
+      `CREATE TABLE IF NOT EXISTS achievements (
         id SERIAL PRIMARY KEY,
         student_name VARCHAR(255) NOT NULL,
-        award_name VARCHAR(255) NOT NULL,
+        title VARCHAR(255) NOT NULL DEFAULT '',
+        level VARCHAR(100) DEFAULT NULL,
+        award_name VARCHAR(255) DEFAULT NULL,
         award_date DATE DEFAULT NULL,
         image_url VARCHAR(255) DEFAULT NULL,
         description TEXT DEFAULT NULL,
+        is_published BOOLEAN NOT NULL DEFAULT FALSE,
+        is_featured BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )`,
-      `CREATE TABLE quick_access (
+      `CREATE TABLE IF NOT EXISTS quick_access (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         url VARCHAR(255) NOT NULL,
@@ -83,12 +86,12 @@ export async function GET() {
         is_active BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )`,
-      `CREATE TABLE site_settings (
+      `CREATE TABLE IF NOT EXISTS site_settings (
         id SERIAL PRIMARY KEY,
         setting_key VARCHAR(100) NOT NULL UNIQUE,
         setting_value TEXT DEFAULT NULL
       )`,
-      `CREATE TABLE officers (
+      `CREATE TABLE IF NOT EXISTS officers (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         position VARCHAR(255) NOT NULL,
@@ -96,19 +99,20 @@ export async function GET() {
         image_url VARCHAR(255) DEFAULT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )`,
-      `CREATE TABLE divisions (
+      `CREATE TABLE IF NOT EXISTS divisions (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         description TEXT DEFAULT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )`,
-      `CREATE TABLE programs (
+      `CREATE TABLE IF NOT EXISTS programs (
         id SERIAL PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         description TEXT DEFAULT NULL,
+        status VARCHAR(50) DEFAULT 'draft',
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )`,
-      `CREATE TABLE admin_activity_logs (
+      `CREATE TABLE IF NOT EXISTS admin_activity_logs (
         id SERIAL PRIMARY KEY,
         admin_id INT DEFAULT NULL,
         action VARCHAR(50) NOT NULL,
@@ -117,29 +121,44 @@ export async function GET() {
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_log_user FOREIGN KEY (admin_id) REFERENCES users (id) ON DELETE SET NULL
       )`,
-      `CREATE TABLE chats (
+      `CREATE TABLE IF NOT EXISTS chats (
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL,
         message TEXT NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_chat_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
       )`,
-      `CREATE TABLE sessions (
+      `CREATE TABLE IF NOT EXISTS sessions (
         id VARCHAR(255) PRIMARY KEY,
         user_id INT NOT NULL,
         expires_at TIMESTAMP NOT NULL,
         CONSTRAINT fk_session_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-      )`
+      )`,
+      // Migration: add new columns if they don't exist yet (safe for existing tables)
+      `ALTER TABLE achievements ADD COLUMN IF NOT EXISTS title VARCHAR(255) NOT NULL DEFAULT ''`,
+      `ALTER TABLE achievements ADD COLUMN IF NOT EXISTS level VARCHAR(100) DEFAULT NULL`,
+      `ALTER TABLE achievements ADD COLUMN IF NOT EXISTS is_published BOOLEAN NOT NULL DEFAULT FALSE`,
+      `ALTER TABLE achievements ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT FALSE`,
+      `ALTER TABLE programs ADD COLUMN IF NOT EXISTS status VARCHAR(50) NOT NULL DEFAULT 'draft'`,
+      `ALTER TABLE events ADD COLUMN IF NOT EXISTS is_published BOOLEAN NOT NULL DEFAULT FALSE`,
     ];
 
+    const results: string[] = [];
     for (const query of queries) {
-      await connection.query(query);
+      try {
+        await connection.query(query);
+        results.push('OK');
+      } catch (e: any) {
+        results.push('SKIP: ' + e.message.substring(0, 80));
+      }
     }
     
     connection.release();
-    return json({ success: true, message: 'Schema successfully created!' });
+    return json({ success: true, message: 'Schema setup complete!', results });
   } catch (error: any) {
     console.error('Setup DB Error:', error);
     return json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
+
