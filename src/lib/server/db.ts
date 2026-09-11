@@ -310,12 +310,12 @@ async function ensureTables(c: Client): Promise<void> {
     await tryAddColumn('programs', 'location TEXT');
     await tryAddColumn('programs', 'person_in_charge TEXT');
 
-    // Check if initial users exist
+    // Check if initial database setup is needed
     const userCheck = await c.execute('SELECT COUNT(*) as count FROM users');
     const count = Number(userCheck.rows[0]?.count ?? 0);
 
     if (count === 0) {
-      console.log('⚡ Initializing default seed data for Turso / SQLite...');
+      console.log('⚡ Initializing default seed data for Turso / SQLite (one-time setup)...');
       const adminPass = await bcrypt.hash('admin123', 10);
       const studentPass = await bcrypt.hash('mahasiswa123', 10);
 
@@ -354,7 +354,8 @@ async function ensureTables(c: Client): Promise<void> {
         ['faculty_name', 'Fakultas Sains dan Teknologi'],
         ['contact_email', 'himafst@ut.ac.id'],
         ['whatsapp_admin', '081234567890'],
-        ['instagram_link', 'https://instagram.com/himafst_ut']
+        ['instagram_link', 'https://instagram.com/himafst_ut'],
+        ['system_initialized', '1']
       ];
 
       for (const [k, v] of settings) {
@@ -405,12 +406,7 @@ async function ensureTables(c: Client): Promise<void> {
         ]
       });
 
-      console.log('✅ Default seed data created successfully!');
-    }
-
-    // Check and seed divisions if empty
-    const divCheck = await c.execute('SELECT COUNT(*) as count FROM divisions');
-    if (Number(divCheck.rows[0]?.count ?? 0) === 0) {
+      // Seed divisions (one-time)
       const defaultDivisions = [
         ['Badan Pengurus Harian', 'Pimpinan dan koordinator utama jalannya organisasi HIMA FST.', 'Tasya Angelicia', '👑'],
         ['Bendahara', 'Pengelolaan keuangan dan administrasi pendanaan organisasi.', 'Ima Siti Fatimah', '💰'],
@@ -425,11 +421,8 @@ async function ensureTables(c: Client): Promise<void> {
           args: [name, desc, leader, icon]
         });
       }
-    }
 
-    // Check and seed officers if empty
-    const offCheck = await c.execute('SELECT COUNT(*) as count FROM officers');
-    if (Number(offCheck.rows[0]?.count ?? 0) === 0) {
+      // Seed officers (one-time)
       const defaultOfficers = [
         ['Tasya Angelicia', 'Ketua Himpunan', 'Badan Pengurus Harian', '/anggota/639728685_17893420674411782_4440245931304648053_n..webp'],
         ['Eka Septi Narsiati', 'Wakil Ketua Himpunan', 'Badan Pengurus Harian', '/anggota/636970169_17893418355411782_8654938015269718382_n..webp'],
@@ -447,11 +440,8 @@ async function ensureTables(c: Client): Promise<void> {
           args: [name, pos, div, img]
         });
       }
-    }
 
-    // Check and seed events if empty
-    const evCheck = await c.execute('SELECT COUNT(*) as count FROM events');
-    if (Number(evCheck.rows[0]?.count ?? 0) === 0) {
+      // Seed events (one-time)
       const defaultEvents = [
         ['Webinar AI & Sains Data Modern', 'Eksplorasi tren kecerdasan buatan dan pemanfaatannya dalam riset sains dan industri modern.', '2026-09-25', '14:00 WIB', 'Zoom Meeting / Online', 'Webinar', 'Mendatang', 1],
         ['Workshop UI/UX & Web Development', 'Pelatihan intensif perancangan produk digital interaktif dan implementasi frontend modern.', '2026-10-10', '09:00 WIB', 'Aula UT Bandung & Online', 'Workshop', 'Mendatang', 1],
@@ -463,11 +453,8 @@ async function ensureTables(c: Client): Promise<void> {
           args: [title, desc, edate, etime, loc, cat, stat, pub]
         });
       }
-    }
 
-    // Check and seed academic info if empty
-    const acadCheck = await c.execute('SELECT COUNT(*) as count FROM academic_info');
-    if (Number(acadCheck.rows[0]?.count ?? 0) === 0) {
+      // Seed academic info (one-time)
       const defaultAcad = [
         ['Panduan Tuton & Tutorial Online 2026', 'Informasi mengenai jadwal inisiasi mingguan, tugas 1, 2, dan 3 pada platform E-Learning.', 'Tuton', 'https://elearning.ut.ac.id', 1],
         ['Jadwal Ujian Akhir Semester (UAS) FST', 'Informasi jadwal dan lokasi ujian tatap muka maupun ujian online take-home exam.', 'Jadwal', 'https://sia.ut.ac.id', 1],
@@ -479,12 +466,8 @@ async function ensureTables(c: Client): Promise<void> {
           args: [title, content, type, link, pub]
         });
       }
-    }
 
-    // Check and seed achievements if empty
-    const achCheck = await c.execute('SELECT COUNT(*) as count FROM achievements');
-    const achCount = Number(achCheck.rows[0]?.count ?? 0);
-    if (achCount === 0) {
+      // Seed achievements (one-time)
       const achs = [
         [
           'Lutfi Ardiansyah',
@@ -529,7 +512,8 @@ async function ensureTables(c: Client): Promise<void> {
           args: [sName, title, award, level, date, img, desc, pub, feat]
         });
       }
-      console.log('🏆 Seeded achievements into Hall of Fame!');
+
+      console.log('✅ Default seed data created successfully!');
     }
     isInitialized = true;
   } catch (err) {
