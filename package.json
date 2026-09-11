@@ -40,6 +40,7 @@
 		"vite": "^8.0.16"
 	},
 	"dependencies": {
+		"@libsql/client": "^0.18.0",
 		"@prisma/client": "^5.14.0",
 		"@sveltejs/adapter-vercel": "^6.3.4",
 		"@vercel/postgres": "^0.10.0",

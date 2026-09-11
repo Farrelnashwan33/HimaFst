@@ -1,22 +1,375 @@
-import { Pool } from 'pg';
+import { createClient, type Client } from '@libsql/client';
 import { building } from '$app/environment';
 import { env } from '$env/dynamic/private';
+import bcrypt from 'bcryptjs';
 
-let pool: Pool | null = null;
+let client: Client | null = null;
+let isInitialized = false;
+let ensurePromise: Promise<void> | null = null;
 
-// Helper to translate MySQL queries to Postgres queries
-function translateQuery(sqlString: string): string {
-  let i = 1;
-  // Replace all '?' with '$1', '$2', etc.
-  let translated = sqlString.replace(/\?/g, () => `$${i++}`);
-  // Replace CURDATE() with CURRENT_DATE
-  translated = translated.replace(/CURDATE\(\)/gi, 'CURRENT_DATE');
-  // Replace ON DUPLICATE KEY UPDATE for site_settings
-  translated = translated.replace(
-    /ON DUPLICATE KEY UPDATE setting_value\s*=\s*VALUES\(setting_value\)/gi,
-    'ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value'
+function getClient(): Client {
+  if (client) return client;
+
+  const url =
+    env.TURSO_DATABASE_URL ||
+    process.env.TURSO_DATABASE_URL ||
+    (env.DATABASE_URL?.startsWith('libsql:') || env.DATABASE_URL?.startsWith('https:') ? env.DATABASE_URL : null) ||
+    'file:local.db';
+
+  const authToken =
+    env.TURSO_AUTH_TOKEN ||
+    process.env.TURSO_AUTH_TOKEN ||
+    undefined;
+
+  client = createClient({
+    url,
+    authToken
+  });
+
+  return client;
+}
+
+// Ensure database tables exist and seed initial data
+async function ensureTables(c: Client): Promise<void> {
+  if (isInitialized || building) return;
+  if (!ensurePromise) {
+    ensurePromise = (async () => {
+      try {
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'mahasiswa',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS student_profiles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL UNIQUE,
+        nim TEXT,
+        program_studi TEXT,
+        whatsapp TEXT,
+        semester TEXT,
+        avatar_url TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS admin_profiles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL UNIQUE,
+        position TEXT,
+        phone TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        expires_at DATETIME NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS announcements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        author_id INTEGER,
+        is_published INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT,
+        event_date TEXT NOT NULL,
+        event_time TEXT,
+        location TEXT,
+        category TEXT,
+        status TEXT DEFAULT 'Mendatang',
+        is_published INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS achievements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_name TEXT NOT NULL,
+        title TEXT,
+        award_name TEXT,
+        level TEXT,
+        award_date TEXT,
+        image_url TEXT,
+        description TEXT,
+        is_published INTEGER DEFAULT 1,
+        is_featured INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS quick_access (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        url TEXT NOT NULL,
+        icon TEXT,
+        sort_order INTEGER DEFAULT 0,
+        is_active INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS site_settings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        setting_key TEXT NOT NULL UNIQUE,
+        setting_value TEXT
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS officers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        position TEXT NOT NULL,
+        division_id INTEGER,
+        image_url TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS divisions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS programs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT,
+        status TEXT DEFAULT 'published',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS admin_activity_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        admin_id INTEGER,
+        action TEXT NOT NULL,
+        module TEXT,
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS chats (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        message TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS academic_info (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        type TEXT DEFAULT 'Umum',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS membership_registrations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        nim TEXT NOT NULL,
+        email TEXT NOT NULL,
+        whatsapp TEXT NOT NULL,
+        prodi TEXT,
+        semester TEXT,
+        division_choice TEXT,
+        reason TEXT,
+        experience TEXT,
+        status TEXT DEFAULT 'Pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS study_programs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await c.execute(`
+      CREATE TABLE IF NOT EXISTS aspirations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        subject TEXT,
+        content TEXT,
+        status TEXT DEFAULT 'Pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Check if initial users exist
+    const userCheck = await c.execute('SELECT COUNT(*) as count FROM users');
+    const count = Number(userCheck.rows[0]?.count ?? 0);
+
+    if (count === 0) {
+      console.log('⚡ Initializing default seed data for Turso / SQLite...');
+      const adminPass = await bcrypt.hash('admin123', 10);
+      const studentPass = await bcrypt.hash('mahasiswa123', 10);
+
+      // Seed super admin
+      await c.execute({
+        sql: 'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+        args: ['Super Admin HIMA', 'superadmin@himafst.org', adminPass, 'admin']
+      });
+
+      // Seed admin
+      await c.execute({
+        sql: 'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+        args: ['Pengurus HIMA FST', 'admin@himafst.org', adminPass, 'admin']
+      });
+
+      // Seed mahasiswa
+      const resMahasiswa = await c.execute({
+        sql: 'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+        args: ['Farrel Mahasiswa', 'mahasiswa@ecampus.ut.ac.id', studentPass, 'mahasiswa']
+      });
+
+      const mId = Number(resMahasiswa.lastInsertRowid);
+      if (mId) {
+        await c.execute({
+          sql: 'INSERT INTO student_profiles (user_id, nim, program_studi, whatsapp, semester) VALUES (?, ?, ?, ?, ?)',
+          args: [mId, '043123456', 'Sistem Informasi', '081234567890', '4']
+        });
+      }
+
+      // Seed Site Settings
+      const settings = [
+        ['hero_badge', 'PORTAL MAHASISWA'],
+        ['hero_title', 'Welcome to Portal Fakultas Sains dan Teknologi 👋'],
+        ['hero_subtitle', 'Ruang informasi, aspirasi, kegiatan, dan kolaborasi mahasiswa Fakultas Sains dan Teknologi UT Bandung.'],
+        ['org_name', 'HIMA FST UT Bandung'],
+        ['faculty_name', 'Fakultas Sains dan Teknologi'],
+        ['contact_email', 'himafst@ut.ac.id'],
+        ['whatsapp_admin', '081234567890'],
+        ['instagram_link', 'https://instagram.com/himafst_ut']
+      ];
+
+      for (const [k, v] of settings) {
+        await c.execute({
+          sql: 'INSERT OR REPLACE INTO site_settings (setting_key, setting_value) VALUES (?, ?)',
+          args: [k, v]
+        });
+      }
+
+      // Seed Study Programs
+      const prodis = [
+        ['Sistem Informasi', 'Program studi yang mempelajari perancangan dan penerapan sistem informasi bisnis & teknologi.'],
+        ['Teknologi Pangan', 'Program studi yang fokus pada pengolahan, pengawetan, dan keamanan pangan.'],
+        ['Biologi', 'Program studi ilmu hayati dan bioteknologi terapan.'],
+        ['Matematika', 'Program studi matematika murni dan komputasi sains data.'],
+        ['Statistika', 'Program studi pengolahan data statistik dan analitika modern.'],
+        ['Perencanaan Wilayah dan Kota (PWK)', 'Program studi tata ruang dan perencanaan kota berkelanjutan.']
+      ];
+
+      for (const [name, desc] of prodis) {
+        await c.execute({
+          sql: 'INSERT INTO study_programs (name, description) VALUES (?, ?)',
+          args: [name, desc]
+        });
+      }
+
+      // Seed Quick Access
+      const quickLinks = [
+        ['SIA UT', 'https://sia.ut.ac.id', 'Globe', 1],
+        ['E-Learning (Tuton)', 'https://elearning.ut.ac.id', 'BookOpen', 2],
+        ['Perpustakaan Digital', 'https://pustaka.ut.ac.id', 'Library', 3],
+        ['Aspirasi Mahasiswa', '/aspirasi', 'MessageSquare', 4]
+      ];
+
+      for (const [name, url, icon, sort] of quickLinks) {
+        await c.execute({
+          sql: 'INSERT INTO quick_access (name, url, icon, sort_order) VALUES (?, ?, ?, ?)',
+          args: [name, url, icon, sort]
+        });
+      }
+
+      // Seed Sample Announcements
+      await c.execute({
+        sql: 'INSERT INTO announcements (title, content, is_published) VALUES (?, ?, 1)',
+        args: [
+          'Pendaftaran Pengurus HIMA FST Periode 2026/2027 Dibuka!',
+          'Kami membuka kesempatan bagi seluruh mahasiswa aktif FST untuk bergabung menjadi bagian dari kepengurusan HIMA FST. Silakan daftar melalui menu Gabung HIMA.'
+        ]
+      });
+
+      console.log('✅ Default seed data created successfully!');
+    }
+    isInitialized = true;
+  } catch (err) {
+    console.error('Error in ensureTables:', err);
+  }
+    })();
+  }
+  return ensurePromise;
+}
+
+// Convert PostgreSQL style parameters ($1, $2) and MySQL style (?) to LibSQL
+function normalizeSql(sqlString: string): string {
+  // Convert Postgres $1, $2 to ?
+  let sql = sqlString.replace(/\$\d+/g, '?');
+
+  // Convert MySQL CURDATE() to SQLite date('now')
+  sql = sql.replace(/CURDATE\(\)/gi, "date('now')");
+
+  // Convert CURRENT_DATE to date('now')
+  sql = sql.replace(/CURRENT_DATE/gi, "date('now')");
+
+  // Convert Boolean TRUE/FALSE literals in SQL to 1/0
+  sql = sql.replace(/=\s*TRUE/gi, '= 1');
+  sql = sql.replace(/=\s*FALSE/gi, '= 0');
+
+  // Convert ON DUPLICATE KEY UPDATE / ON CONFLICT
+  sql = sql.replace(
+    /ON CONFLICT\s*\(setting_key\)\s*DO UPDATE SET setting_value\s*=\s*EXCLUDED\.setting_value/gi,
+    'ON CONFLICT(setting_key) DO UPDATE SET setting_value=excluded.setting_value'
   );
-  return translated;
+
+  return sql;
 }
 
 export function getDb() {
@@ -34,55 +387,45 @@ export function getDb() {
       })
     } as any;
   }
-  
-  if (!pool) {
-    const connectionString = env.POSTGRES_URL || process.env.POSTGRES_URL || env.DATABASE_URL || process.env.DATABASE_URL;
-    if (!connectionString) {
-      throw new Error('Database URL belum dikonfigurasi. Harap tentukan DATABASE_URL atau POSTGRES_URL di environment variable.');
-    }
-    
-    // Check if SSL is required (for hosted Postgres like Neon, Supabase, Vercel Postgres)
-    const isLocal = connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
-    
-    pool = new Pool({
-      connectionString,
-      ssl: isLocal ? false : { rejectUnauthorized: false },
-      connectionTimeoutMillis: 10000,
-      idleTimeoutMillis: 10000,
-      max: 10,
-    });
-  }
+
+  const c = getClient();
 
   const queryFn = async (sqlString: string, params: any[] = []) => {
-    const pgSql = translateQuery(sqlString);
-    const result = await pool!.query(pgSql, params);
-    return [result.rows, result.fields];
+    await ensureTables(c);
+    const cleanSql = normalizeSql(sqlString);
+    const result = await c.execute({ sql: cleanSql, args: params });
+    // result.rows is an array of objects
+    const rows = Array.from(result.rows).map((row) => ({ ...row }));
+    return [rows, result.columns];
   };
 
-  // Create a wrapper that acts like mysql2 / pg compatible
+  const executeFn = async (sqlString: string, params: any[] = []) => {
+    await ensureTables(c);
+    const cleanSql = normalizeSql(sqlString);
+    const result = await c.execute({ sql: cleanSql, args: params });
+    const rows = Array.from(result.rows).map((row) => ({ ...row }));
+    const meta = {
+      insertId: Number(result.lastInsertRowid),
+      affectedRows: result.rowsAffected,
+      lastInsertRowid: result.lastInsertRowid
+    };
+    return [rows, meta];
+  };
+
   const wrapper = {
     query: queryFn,
-    execute: queryFn,
+    execute: executeFn,
     getConnection: async () => {
-      const client = await pool!.connect();
-      const clientQuery = async (sqlString: string, params: any[] = []) => {
-        const pgSql = translateQuery(sqlString);
-        const result = await client.query(pgSql, params);
-        return [result.rows, result.fields];
-      };
       return {
-        query: clientQuery,
-        execute: clientQuery,
-        beginTransaction: () => client.query('BEGIN'),
-        commit: () => client.query('COMMIT'),
-        rollback: () => client.query('ROLLBACK'),
-        release: () => client.release()
+        query: queryFn,
+        execute: executeFn,
+        beginTransaction: async () => {},
+        commit: async () => {},
+        rollback: async () => {},
+        release: () => {}
       };
     }
   };
 
   return wrapper;
 }
-
-
-

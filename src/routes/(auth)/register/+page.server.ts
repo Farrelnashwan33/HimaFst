@@ -1,5 +1,5 @@
 import { fail } from '@sveltejs/kit';
-import prisma from '$lib/server/prisma';
+import { getDb } from '$lib/server/db';
 import { hashPassword } from '$lib/server/auth';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -35,45 +35,38 @@ export const actions: Actions = {
     }
 
     try {
+      const db = getDb();
+
       // Check for duplicate email
-      const existingUser = await prisma.user.findUnique({
-        where: { email }
-      });
-      if (existingUser) {
+      const [existingUsers]: any = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+      if (existingUsers && existingUsers.length > 0) {
         return fail(400, { ...values, error: 'Email sudah terdaftar.' });
       }
 
       // Check for duplicate NIM
-      const existingProfile = await prisma.studentProfile.findFirst({
-        where: { nim }
-      });
-      if (existingProfile) {
+      const [existingProfiles]: any = await db.query('SELECT id FROM student_profiles WHERE nim = ?', [nim]);
+      if (existingProfiles && existingProfiles.length > 0) {
         return fail(400, { ...values, error: 'NIM sudah terdaftar.' });
       }
 
       // Hash password
       const hashedPassword = await hashPassword(password);
 
-      // Insert user and profile using Prisma nested writes
-      await prisma.user.create({
-        data: {
-          name: fullName,
-          email,
-          password: hashedPassword,
-          role: 'mahasiswa',
-          profile: {
-            create: {
-              nim,
-              whatsapp,
-              programStudi,
-              semester
-            }
-          }
-        }
-      });
+      // Insert user
+      const [, meta]: any = await db.execute(
+        'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+        [fullName, email, hashedPassword, 'mahasiswa']
+      );
+
+      const userId = meta.insertId;
+
+      // Insert student profile
+      await db.execute(
+        'INSERT INTO student_profiles (user_id, nim, whatsapp, program_studi, semester) VALUES (?, ?, ?, ?, ?)',
+        [userId, nim, whatsapp, programStudi, semester]
+      );
 
       return { success: true };
-
 
     } catch (e: any) {
       console.error('REGISTER ERROR:', e.message, e.stack);

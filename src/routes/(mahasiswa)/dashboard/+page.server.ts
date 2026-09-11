@@ -1,5 +1,4 @@
 import { getDb } from '$lib/server/db';
-import prisma from '$lib/server/prisma';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -45,8 +44,11 @@ export const load: PageServerLoad = async ({ locals }) => {
       quickAccess = qaRows;
     } catch (e) {}
 
-    // 3. Dynamic Stats (using Prisma for users, raw pg for others)
-    studentCount = await prisma.user.count({ where: { role: 'mahasiswa' } });
+    // 3. Dynamic Stats
+    try {
+      const [uRows]: any = await db.query("SELECT COUNT(*) as count FROM users WHERE role = 'mahasiswa'");
+      studentCount = Number(uRows[0]?.count ?? 0);
+    } catch (e) {}
 
     try {
       const [pRows]: any = await db.query(`SELECT COUNT(*) as count FROM programs WHERE status = 'published' OR status = 'active'`);
