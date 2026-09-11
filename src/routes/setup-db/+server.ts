@@ -7,6 +7,11 @@ export async function GET() {
   try {
     const db = getDb();
     const connection = await db.getConnection();
+    const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+    if (!connectionString) {
+      const keys = Object.keys(process.env).filter(k => k.includes('POSTGRES') || k.includes('DATABASE') || k.includes('URL') || k.includes('PRISMA'));
+      throw new Error("No connection string found. Available keys: " + keys.join(', '));
+    }
     
     // Read schema file
     const schemaPath = path.resolve('database/schema.sql');
