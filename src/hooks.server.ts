@@ -28,7 +28,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
   // Authorization checks based on route
   const pathname = event.url.pathname;
-  const isAuthRoute = pathname === '/login' || pathname === '/register' || pathname === '/admin/login';
+  const isAuthRoute = pathname === '/login' || pathname === '/register' || pathname === '/admin/login' || pathname === '/forgot-password';
   
   if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
     if (!event.locals.user) {

@@ -54,7 +54,7 @@
         </label>
       </div>
       <div class="text-sm">
-        <a href="#" class="font-medium text-[#0f4c81] hover:text-[#1e3a8a] transition-colors">
+        <a href="/forgot-password" class="font-medium text-[#0f4c81] hover:text-[#1e3a8a] transition-colors">
           Lupa password?
         </a>
       </div>
