@@ -10,16 +10,35 @@ let ensurePromise: Promise<void> | null = null;
 function getClient(): Client {
   if (client) return client;
 
+  const isServerless =
+    process.env.VERCEL === '1' ||
+    Boolean(process.env.VERCEL) ||
+    Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME) ||
+    process.env.NODE_ENV === 'production';
+
+  const fallbackUrl = isServerless ? 'file:/tmp/local.db' : 'file:local.db';
+
   const url =
     env.TURSO_DATABASE_URL ||
     process.env.TURSO_DATABASE_URL ||
+    env.TURSO_URL ||
+    process.env.TURSO_URL ||
+    env.LIBSQL_URL ||
+    process.env.LIBSQL_URL ||
     (env.DATABASE_URL?.startsWith('libsql:') || env.DATABASE_URL?.startsWith('https:') ? env.DATABASE_URL : null) ||
-    'file:local.db';
+    (process.env.DATABASE_URL?.startsWith('libsql:') || process.env.DATABASE_URL?.startsWith('https:') ? process.env.DATABASE_URL : null) ||
+    fallbackUrl;
 
   const authToken =
     env.TURSO_AUTH_TOKEN ||
     process.env.TURSO_AUTH_TOKEN ||
+    env.LIBSQL_AUTH_TOKEN ||
+    process.env.LIBSQL_AUTH_TOKEN ||
+    env.TURSO_TOKEN ||
+    process.env.TURSO_TOKEN ||
     undefined;
+
+  console.log(`[DB] Connecting to database: ${url.startsWith('file:') ? url : url.replace(/\/\/.*@/, '//***@')}`);
 
   client = createClient({
     url,
