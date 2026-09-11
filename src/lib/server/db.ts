@@ -304,6 +304,11 @@ async function ensureTables(c: Client): Promise<void> {
     await tryAddColumn('study_programs', 'is_active INTEGER DEFAULT 1');
     await tryAddColumn('chats', 'is_read INTEGER DEFAULT 0');
     await tryAddColumn('chats', 'reply TEXT');
+    await tryAddColumn('programs', 'division_name TEXT');
+    await tryAddColumn('programs', 'objective TEXT');
+    await tryAddColumn('programs', 'program_date TEXT');
+    await tryAddColumn('programs', 'location TEXT');
+    await tryAddColumn('programs', 'person_in_charge TEXT');
 
     // Check if initial users exist
     const userCheck = await c.execute('SELECT COUNT(*) as count FROM users');
