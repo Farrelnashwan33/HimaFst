@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
-import { getDb } from './db';
 import crypto from 'crypto';
+import prisma from './prisma';
 
 const SALT_ROUNDS = 10;
 
@@ -22,11 +22,13 @@ export async function createSession(userId: number): Promise<string> {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 30);
 
-  const db = getDb();
-  await db.query(
-    'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)',
-    [sessionId, userId, expiresAt]
-  );
+  await prisma.session.create({
+    data: {
+      id: sessionId,
+      userId,
+      expiresAt
+    }
+  });
 
   return sessionId;
 }
@@ -35,51 +37,49 @@ export async function validateSession(sessionId: string): Promise<{
   session: { id: string, userId: number, expiresAt: Date } | null,
   user: { id: number, email: string, role: string } | null
 }> {
-  const db = getDb();
-  const [sessionRows]: any = await db.query(
-    'SELECT * FROM sessions WHERE id = ?',
-    [sessionId]
-  );
+  const sessionData = await prisma.session.findUnique({
+    where: { id: sessionId },
+    include: { user: true }
+  });
 
-  if (sessionRows.length === 0) {
+  if (!sessionData) {
     return { session: null, user: null };
   }
 
-  const session = sessionRows[0];
-  const expiresAt = new Date(session.expires_at);
+  const expiresAt = new Date(sessionData.expiresAt);
 
   if (expiresAt.getTime() < Date.now()) {
-    await db.query('DELETE FROM sessions WHERE id = ?', [sessionId]);
+    await prisma.session.delete({ where: { id: sessionId } });
     return { session: null, user: null };
   }
 
   // Extend session if it's less than 15 days from expiring
   if (expiresAt.getTime() - Date.now() < 1000 * 60 * 60 * 24 * 15) {
     expiresAt.setDate(expiresAt.getDate() + 15);
-    await db.query('UPDATE sessions SET expires_at = ? WHERE id = ?', [expiresAt, sessionId]);
-  }
-
-  const [userRows]: any = await db.query(
-    'SELECT id, email, role FROM users WHERE id = ?',
-    [session.user_id]
-  );
-
-  if (userRows.length === 0) {
-    await db.query('DELETE FROM sessions WHERE id = ?', [sessionId]);
-    return { session: null, user: null };
+    await prisma.session.update({
+      where: { id: sessionId },
+      data: { expiresAt }
+    });
   }
 
   return {
     session: {
-      id: session.id,
-      userId: session.user_id,
+      id: sessionData.id,
+      userId: sessionData.userId,
       expiresAt
     },
-    user: userRows[0]
+    user: {
+      id: sessionData.user.id,
+      email: sessionData.user.email,
+      role: sessionData.user.role
+    }
   };
 }
 
 export async function invalidateSession(sessionId: string): Promise<void> {
-  const db = getDb();
-  await db.query('DELETE FROM sessions WHERE id = ?', [sessionId]);
+  try {
+    await prisma.session.delete({ where: { id: sessionId } });
+  } catch (e) {
+    // Ignore error if session doesn't exist
+  }
 }

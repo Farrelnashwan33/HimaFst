@@ -1,5 +1,5 @@
 import { fail } from '@sveltejs/kit';
-import { getDb } from '$lib/server/db';
+import prisma from '$lib/server/prisma';
 import { hashPassword } from '$lib/server/auth';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -35,52 +35,45 @@ export const actions: Actions = {
     }
 
     try {
-      const db = getDb();
-      
       // Check for duplicate email
-      const [emailCheck]: any = await db.query('SELECT id FROM users WHERE email = ?', [email]);
-      if (emailCheck.length > 0) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email }
+      });
+      if (existingUser) {
         return fail(400, { ...values, error: 'Email sudah terdaftar.' });
       }
 
       // Check for duplicate NIM
-      const [nimCheck]: any = await db.query('SELECT id FROM student_profiles WHERE nim = ?', [nim]);
-      if (nimCheck.length > 0) {
+      const existingProfile = await prisma.studentProfile.findFirst({
+        where: { nim }
+      });
+      if (existingProfile) {
         return fail(400, { ...values, error: 'NIM sudah terdaftar.' });
       }
 
       // Hash password
       const hashedPassword = await hashPassword(password);
 
-      // Begin transaction
-      const connection = await db.getConnection();
-      try {
-        await connection.beginTransaction();
+      // Insert user and profile using Prisma nested writes
+      await prisma.user.create({
+        data: {
+          name: fullName,
+          email,
+          password: hashedPassword,
+          role: 'mahasiswa',
+          profile: {
+            create: {
+              nim,
+              whatsapp,
+              programStudi,
+              semester
+            }
+          }
+        }
+      });
 
-        // Insert user
-        const [userResult]: any = await connection.query(
-          'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?) RETURNING id',
-          [fullName, email, hashedPassword, 'mahasiswa']
-        );
-        const userId = userResult[0].id;
+      return { success: true };
 
-        // Insert profile
-        await connection.query(
-          `INSERT INTO student_profiles 
-           (user_id, nim, whatsapp, program_studi, semester) 
-           VALUES (?, ?, ?, ?, ?)`,
-          [userId, nim, whatsapp, programStudi, semester]
-        );
-
-        await connection.commit();
-        return { success: true };
-      } catch (e) {
-        await connection.rollback();
-        console.error(e);
-        return fail(500, { ...values, error: 'Gagal mendaftarkan akun. Coba lagi.' });
-      } finally {
-        connection.release();
-      }
 
     } catch (e: any) {
       console.error('REGISTER ERROR:', e.message, e.stack);

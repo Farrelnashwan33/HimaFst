@@ -1,5 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { getDb } from '$lib/server/db';
+import prisma from '$lib/server/prisma';
 import { verifyPassword, createSession } from '$lib/server/auth';
 import type { Actions } from './$types';
 
@@ -14,14 +14,13 @@ export const actions: Actions = {
     }
 
     try {
-      const db = getDb();
-      const [rows]: any = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+      const user = await prisma.user.findUnique({
+        where: { email }
+      });
       
-      if (rows.length === 0) {
+      if (!user) {
         return fail(400, { email, error: 'Invalid email or password' });
       }
-
-      const user = rows[0];
 
       if (user.role !== 'mahasiswa' && user.role !== 'admin') {
         return fail(403, { email, error: 'Access denied.' });
