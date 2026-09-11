@@ -22,7 +22,8 @@ export function getDb() {
   if (!pool) {
     const connectionString = env.POSTGRES_URL || process.env.POSTGRES_URL || env.DATABASE_URL || process.env.DATABASE_URL;
     if (!connectionString) {
-      throw new Error("No database connection string found. Please set POSTGRES_URL or DATABASE_URL.");
+      const allKeys = Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('KEY'));
+      throw new Error(`Database belum terhubung di Vercel Dashboard! Tidak ada URL. Variabel yang ada: ${allKeys.join(', ')}`);
     }
     // Automatically uses process.env.POSTGRES_URL or env.POSTGRES_URL
     pool = createPool({
