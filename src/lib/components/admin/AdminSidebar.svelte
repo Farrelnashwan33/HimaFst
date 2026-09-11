@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { page, navigating } from '$app/stores';
   import { siteConfig } from '$lib/config/site';
 
   interface Props {
@@ -160,7 +160,7 @@
 >
   <!-- Header / Brand -->
   <div class="h-20 flex items-center px-6 border-b border-slate-800/80 justify-between shrink-0">
-    <a href="/admin/dashboard" class="flex items-center gap-3 group overflow-hidden">
+    <a href="/admin/dashboard" data-sveltekit-preload-data="hover" class="flex items-center gap-3 group overflow-hidden">
       <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0f4c81] to-[#1e3a8a] text-white flex items-center justify-center font-black text-lg shadow-lg shadow-blue-900/30 shrink-0 group-hover:scale-105 transition-transform">
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       </div>
@@ -195,8 +195,11 @@
 
         {#each group.items as item}
           {@const active = isActive(item.href)}
+          {@const isLoading = $navigating?.to?.url.pathname === item.href}
           <a
             href={item.href}
+            data-sveltekit-preload-data="hover"
+            data-sveltekit-preload-code="eager"
             onclick={() => {
               if (isOpenMobile) closeMobile();
             }}
@@ -208,7 +211,12 @@
           >
             <!-- Icon -->
             <div class="shrink-0 {active ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'} transition-colors">
-              {#if item.icon === 'LayoutDashboard'}
+              {#if isLoading}
+                <svg class="animate-spin h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+              {:else if item.icon === 'LayoutDashboard'}
                 <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
               {:else if item.icon === 'Users'}
                 <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>

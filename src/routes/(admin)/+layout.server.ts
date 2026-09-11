@@ -20,25 +20,20 @@ export const load: LayoutServerLoad = async ({ locals }) => {
   let userDetails = null;
 
   try {
-    // Live counts for sidebar badges
-    const [aspRes]: any = await db.query(
-      "SELECT COUNT(*) as count FROM aspirations WHERE LOWER(status) = 'pending' OR LOWER(status) = 'baru'"
-    );
-    aspirasiPending = Number(aspRes[0]?.count ?? 0);
-
-    const [regRes]: any = await db.query(
-      "SELECT COUNT(*) as count FROM membership_registrations WHERE LOWER(status) = 'pending' OR LOWER(status) = 'menunggu'"
-    );
-    pendaftaranPending = Number(regRes[0]?.count ?? 0);
-
-    const [chatRes]: any = await db.query("SELECT COUNT(*) as count FROM chats WHERE is_read = 0");
-    chatUnread = Number(chatRes[0]?.count ?? 0);
-
-    const [uRows]: any = await db.query('SELECT id, name, email, role FROM users WHERE id = ?', [
-      locals.user.id
+    // Run all count queries in parallel for instant speed
+    const [aspRes, regRes, chatRes, uRows]: any = await Promise.all([
+      db.query("SELECT COUNT(*) as count FROM aspirations WHERE LOWER(status) = 'pending' OR LOWER(status) = 'baru'"),
+      db.query("SELECT COUNT(*) as count FROM membership_registrations WHERE LOWER(status) = 'pending' OR LOWER(status) = 'menunggu'"),
+      db.query("SELECT COUNT(*) as count FROM chats WHERE is_read = 0"),
+      db.query("SELECT id, name, email, role FROM users WHERE id = ?", [locals.user.id])
     ]);
-    if (uRows && uRows.length > 0) {
-      userDetails = uRows[0];
+
+    aspirasiPending = Number(aspRes[0]?.[0]?.count ?? 0);
+    pendaftaranPending = Number(regRes[0]?.[0]?.count ?? 0);
+    chatUnread = Number(chatRes[0]?.[0]?.count ?? 0);
+
+    if (uRows && uRows[0] && uRows[0].length > 0) {
+      userDetails = uRows[0][0];
     }
   } catch (err) {
     console.error('Admin Layout Load Error:', err);
