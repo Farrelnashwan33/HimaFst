@@ -59,17 +59,17 @@ export const actions: Actions = {
 
         // Insert user
         const [userResult]: any = await connection.query(
-          'INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)',
-          [email, hashedPassword, 'mahasiswa']
+          'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?) RETURNING id',
+          [fullName, email, hashedPassword, 'mahasiswa']
         );
-        const userId = userResult.insertId;
+        const userId = userResult[0].id;
 
         // Insert profile
         await connection.query(
           `INSERT INTO student_profiles 
-           (user_id, full_name, nim, whatsapp, program_studi, semester) 
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [userId, fullName, nim, whatsapp, programStudi, semester]
+           (user_id, nim, whatsapp, program_studi, semester) 
+           VALUES (?, ?, ?, ?, ?)`,
+          [userId, nim, whatsapp, programStudi, semester]
         );
 
         await connection.commit();
