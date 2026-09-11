@@ -358,6 +358,57 @@ async function ensureTables(c: Client): Promise<void> {
 
       console.log('✅ Default seed data created successfully!');
     }
+
+    // Check and seed achievements if empty
+    const achCheck = await c.execute('SELECT COUNT(*) as count FROM achievements');
+    const achCount = Number(achCheck.rows[0]?.count ?? 0);
+    if (achCount === 0) {
+      const achs = [
+        [
+          'Lutfi Ardiansyah',
+          'Juara 1 Desain Poster Ilmiah',
+          'DISPORSENI Nasional UT 2026',
+          'Nasional',
+          '2026-08-15',
+          '/prestasi/lutfi.png',
+          'Mahasiswa S1 Sistem Informasi yang berprestasi mewakili Fakultas Sains dan Teknologi Universitas Terbuka Bandung pada ajang DISPORSENI Nasional UT 2026.',
+          1,
+          1
+        ],
+        [
+          'Wasil Mawardi Assul Toni',
+          'Juara 2 Debat Ilmiah Sains',
+          'DISPORSENI Nasional UT 2026',
+          'Nasional',
+          '2026-08-16',
+          '/prestasi/wasil.png',
+          'Mahasiswa S1 Sistem Informasi yang berprestasi mewakili Fakultas Sains dan Teknologi Universitas Terbuka Bandung pada ajang DISPORSENI Nasional UT 2026.',
+          1,
+          1
+        ],
+        [
+          'Alfi Tahar',
+          'Juara 1 Data Science Competition',
+          'DISPORSENI Nasional UT 2026',
+          'Nasional',
+          '2026-08-17',
+          '/prestasi/alfi.png',
+          'Mahasiswa S1 Sains & Data yang berprestasi mewakili Fakultas Sains dan Teknologi Universitas Terbuka Bandung pada ajang DISPORSENI Nasional UT 2026.',
+          1,
+          1
+        ]
+      ];
+
+      for (const [sName, title, award, level, date, img, desc, pub, feat] of achs) {
+        await c.execute({
+          sql: `INSERT INTO achievements 
+                (student_name, title, award_name, level, award_date, image_url, description, is_published, is_featured) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          args: [sName, title, award, level, date, img, desc, pub, feat]
+        });
+      }
+      console.log('🏆 Seeded achievements into Hall of Fame!');
+    }
     isInitialized = true;
   } catch (err) {
     console.error('Error in ensureTables:', err);
