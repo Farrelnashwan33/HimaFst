@@ -1,4 +1,5 @@
 import { getDb } from '$lib/server/db';
+import prisma from '$lib/server/prisma';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -40,14 +41,25 @@ export const load: PageServerLoad = async ({ locals }) => {
     quickAccess = qaRows;
 
     // 3. Fetch Dynamic Stats
-    const [sCount]: any = await db.query('SELECT COUNT(*) as count FROM users WHERE role = "mahasiswa"');
-    studentCount = sCount;
-    const [pCount]: any = await db.query('SELECT COUNT(*) as count FROM programs');
-    programCount = pCount;
-    const [eCount]: any = await db.query('SELECT COUNT(*) as count FROM events WHERE event_date >= CURDATE()');
-    eventCount = eCount;
-    const [aCount]: any = await db.query('SELECT COUNT(*) as count FROM achievements');
-    achieveCount = aCount;
+    const totalMahasiswa = await prisma.user.count({
+      where: { role: 'mahasiswa' }
+    });
+    studentCount = [{ count: totalMahasiswa }];
+
+    try {
+      const [pCount]: any = await db.query('SELECT COUNT(*) as count FROM programs');
+      programCount = pCount;
+    } catch (e) {}
+
+    try {
+      const [eCount]: any = await db.query('SELECT COUNT(*) as count FROM events WHERE event_date >= CURRENT_DATE');
+      eventCount = eCount;
+    } catch (e) {}
+
+    try {
+      const [aCount]: any = await db.query('SELECT COUNT(*) as count FROM achievements');
+      achieveCount = aCount;
+    } catch (e) {}
 
     // 4. Fetch Announcements (Published, latest 3)
     // const [annRows]: any = await db.query(`

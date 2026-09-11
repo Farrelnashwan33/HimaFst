@@ -1,20 +1,25 @@
 import type { PageServerLoad } from './$types';
 import { getDb } from '$lib/server/db';
-const db = getDb();
+import prisma from '$lib/server/prisma';
 
 export const load: PageServerLoad = async () => {
+	const db = getDb();
 	try {
-		const [[studentCount]] = await db.execute('SELECT COUNT(*) as count FROM student_profiles');
-		const [[adminCount]] = await db.execute('SELECT COUNT(*) as count FROM users WHERE role = "admin"');
-		const [[eventCount]] = await db.execute('SELECT COUNT(*) as count FROM events');
-		const [[announcementCount]] = await db.execute('SELECT COUNT(*) as count FROM announcements');
+		const studentCount = await prisma.studentProfile.count();
+		const adminCount = await prisma.user.count({ where: { role: 'admin' } });
 		
-		const [recentLogs] = await db.execute('SELECT * FROM admin_activity_logs ORDER BY created_at DESC LIMIT 5');
+		const [eventResult]: any = await db.query('SELECT COUNT(*) as count FROM events');
+		const eventCount = eventResult[0];
+		
+		const [announcementResult]: any = await db.query('SELECT COUNT(*) as count FROM announcements');
+		const announcementCount = announcementResult[0];
+		
+		const [recentLogs]: any = await db.query('SELECT * FROM admin_activity_logs ORDER BY created_at DESC LIMIT 5');
 
 		return {
 			stats: {
-				students: (studentCount as any).count,
-				admins: (adminCount as any).count,
+				students: studentCount,
+				admins: adminCount,
 				events: (eventCount as any).count,
 				announcements: (announcementCount as any).count
 			},
