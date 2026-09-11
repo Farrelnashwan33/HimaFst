@@ -20,9 +20,13 @@ export function getDb() {
   }
   
   if (!pool) {
+    const connectionString = env.POSTGRES_URL || process.env.POSTGRES_URL || env.DATABASE_URL || process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error("No database connection string found. Please set POSTGRES_URL or DATABASE_URL.");
+    }
     // Automatically uses process.env.POSTGRES_URL or env.POSTGRES_URL
     pool = createPool({
-      connectionString: env.POSTGRES_URL || process.env.POSTGRES_URL,
+      connectionString: connectionString,
     });
   }
 
