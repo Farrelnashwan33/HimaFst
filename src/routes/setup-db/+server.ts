@@ -13,15 +13,124 @@ export async function GET() {
       throw new Error("No connection string found. Available keys: " + keys.join(', '));
     }
     
-    // Read schema file
-    const schemaPath = path.resolve('database/schema.sql');
-    const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-    
-    // Split queries by semicolon and filter empty ones
-    const queries = schemaSql
-      .split(';')
-      .map(q => q.trim())
-      .filter(q => q.length > 0 && !q.startsWith('--'));
+    // SQL Queries embedded directly to avoid file reading issues on Vercel
+    const queries = [
+      `CREATE TABLE users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) NOT NULL DEFAULT 'mahasiswa',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE student_profiles (
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL UNIQUE,
+        nim VARCHAR(50) DEFAULT NULL,
+        program_studi VARCHAR(255) DEFAULT NULL,
+        whatsapp VARCHAR(50) DEFAULT NULL,
+        semester VARCHAR(10) DEFAULT NULL,
+        avatar_url VARCHAR(255) DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_student_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE admin_profiles (
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL UNIQUE,
+        position VARCHAR(255) DEFAULT NULL,
+        phone VARCHAR(50) DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_admin_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE announcements (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        author_id INT DEFAULT NULL,
+        is_published BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_announcement_author FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE SET NULL
+      )`,
+      `CREATE TABLE events (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT DEFAULT NULL,
+        event_date DATE NOT NULL,
+        event_time TIME DEFAULT NULL,
+        location VARCHAR(255) DEFAULT NULL,
+        category VARCHAR(100) DEFAULT NULL,
+        status VARCHAR(100) DEFAULT 'Mendatang',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE achievements (
+        id SERIAL PRIMARY KEY,
+        student_name VARCHAR(255) NOT NULL,
+        award_name VARCHAR(255) NOT NULL,
+        award_date DATE DEFAULT NULL,
+        image_url VARCHAR(255) DEFAULT NULL,
+        description TEXT DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE quick_access (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        url VARCHAR(255) NOT NULL,
+        icon VARCHAR(255) DEFAULT NULL,
+        sort_order INT DEFAULT 0,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE site_settings (
+        id SERIAL PRIMARY KEY,
+        setting_key VARCHAR(100) NOT NULL UNIQUE,
+        setting_value TEXT DEFAULT NULL
+      )`,
+      `CREATE TABLE officers (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        position VARCHAR(255) NOT NULL,
+        division_id INT DEFAULT NULL,
+        image_url VARCHAR(255) DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE divisions (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE programs (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE admin_activity_logs (
+        id SERIAL PRIMARY KEY,
+        admin_id INT DEFAULT NULL,
+        action VARCHAR(50) NOT NULL,
+        module VARCHAR(100) DEFAULT NULL,
+        description TEXT DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_log_user FOREIGN KEY (admin_id) REFERENCES users (id) ON DELETE SET NULL
+      )`,
+      `CREATE TABLE chats (
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_chat_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE sessions (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id INT NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        CONSTRAINT fk_session_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+      )`
+    ];
 
     for (const query of queries) {
       await connection.query(query);
