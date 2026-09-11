@@ -11,12 +11,12 @@ export const actions: Actions = {
   default: async ({ request }) => {
     const data = await request.formData();
     
-    const fullName = data.get('fullName') as string;
-    const nim = data.get('nim') as string;
-    const email = data.get('email') as string;
-    const whatsapp = data.get('whatsapp') as string;
-    const programStudi = data.get('programStudi') as string;
-    const semester = data.get('semester') as string;
+    const fullName = (data.get('fullName') as string)?.trim();
+    const nim = (data.get('nim') as string)?.trim();
+    const email = (data.get('email') as string)?.trim().toLowerCase();
+    const whatsapp = (data.get('whatsapp') as string)?.trim();
+    const programStudi = (data.get('programStudi') as string)?.trim();
+    const semester = (data.get('semester') as string)?.trim();
     const password = data.get('password') as string;
     const confirmPassword = data.get('confirmPassword') as string;
 
@@ -38,13 +38,13 @@ export const actions: Actions = {
       const db = getDb();
 
       // Check for duplicate email
-      const [existingUsers]: any = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+      const [existingUsers]: any = await db.query('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [email]);
       if (existingUsers && existingUsers.length > 0) {
         return fail(400, { ...values, error: 'Email sudah terdaftar.' });
       }
 
       // Check for duplicate NIM
-      const [existingProfiles]: any = await db.query('SELECT id FROM student_profiles WHERE nim = ?', [nim]);
+      const [existingProfiles]: any = await db.query('SELECT id FROM student_profiles WHERE LOWER(nim) = LOWER(?)', [nim]);
       if (existingProfiles && existingProfiles.length > 0) {
         return fail(400, { ...values, error: 'NIM sudah terdaftar.' });
       }

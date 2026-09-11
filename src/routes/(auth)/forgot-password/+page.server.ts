@@ -10,14 +10,14 @@ export const load: PageServerLoad = async () => {
 export const actions: Actions = {
   default: async ({ request }) => {
     const data = await request.formData();
-    const email = (data.get('email') as string)?.trim();
+    const email = (data.get('email') as string)?.trim().toLowerCase();
     const nim = (data.get('nim') as string)?.trim();
     const newPassword = data.get('newPassword') as string;
     const confirmPassword = data.get('confirmPassword') as string;
 
     const values = { email, nim };
 
-    if (!email || !nim || !newPassword || !confirmPassword) {
+    if (!email || !newPassword || !confirmPassword) {
       return fail(400, { ...values, error: 'Semua kolom wajib diisi.' });
     }
 
@@ -45,11 +45,12 @@ export const actions: Actions = {
 
       const user = rows[0];
 
-      // Verifikasi NIM untuk mahasiswa
-      if (user.role === 'mahasiswa') {
-        const userNim = (user.nim || '').toString().trim();
-        if (!userNim || userNim.toLowerCase() !== nim.toLowerCase()) {
-          return fail(400, { ...values, error: 'Kombinasi Email dan NIM tidak sesuai dengan data terdaftar.' });
+      // Verifikasi NIM jika user adalah mahasiswa
+      if (user.role === 'mahasiswa' && user.nim) {
+        const userNim = (user.nim || '').toString().trim().toLowerCase();
+        const inputNim = (nim || '').toLowerCase();
+        if (inputNim && userNim !== inputNim) {
+          return fail(400, { ...values, error: 'NIM tidak sesuai dengan data akun terdaftar.' });
         }
       }
 

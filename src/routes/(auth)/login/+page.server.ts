@@ -6,7 +6,7 @@ import type { Actions } from './$types';
 export const actions: Actions = {
   default: async ({ request, cookies }) => {
     const data = await request.formData();
-    const email = data.get('email') as string;
+    const email = (data.get('email') as string)?.trim().toLowerCase();
     const password = data.get('password') as string;
 
     if (!email || !password) {
@@ -15,7 +15,7 @@ export const actions: Actions = {
 
     try {
       const db = getDb();
-      const [rows]: any = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+      const [rows]: any = await db.query('SELECT * FROM users WHERE LOWER(email) = LOWER(?)', [email]);
       
       if (!rows || rows.length === 0) {
         return fail(400, { email, error: 'Invalid email or password' });
