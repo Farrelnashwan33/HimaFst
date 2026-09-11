@@ -82,9 +82,9 @@ export const actions: Actions = {
         connection.release();
       }
 
-    } catch (e) {
-      console.error(e);
-      return fail(500, { ...values, error: 'Internal server error' });
+    } catch (e: any) {
+      console.error('REGISTER ERROR:', e.message, e.stack);
+      return fail(500, { ...values, error: 'Internal server error: ' + (e.message || 'Unknown error') });
     }
   }
 };

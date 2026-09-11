@@ -46,11 +46,11 @@ export const actions: Actions = {
         throw redirect(302, '/admin/dashboard');
       }
 
-    } catch (e) {
+    } catch (e: any) {
       if (e instanceof Error && e.message.startsWith('Not found:')) throw e;
       if (e && typeof e === 'object' && 'status' in e && e.status === 302) throw e;
-      console.error(e);
-      return fail(500, { email, error: 'Internal server error' });
+      console.error('LOGIN ERROR:', e.message, e.stack);
+      return fail(500, { email, error: 'Internal server error: ' + (e.message || 'Unknown error') });
     }
 
     throw redirect(302, '/dashboard');
