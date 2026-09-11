@@ -7,8 +7,7 @@ export async function GET() {
     const connection = await db.getConnection();
     const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
     if (!connectionString) {
-      const keys = Object.keys(process.env).filter(k => k.includes('POSTGRES') || k.includes('DATABASE') || k.includes('URL') || k.includes('PRISMA'));
-      throw new Error("No connection string found. Available keys: " + keys.join(', '));
+      throw new Error("No database connection string configured in environment.");
     }
     
     // SQL Queries embedded directly to avoid file reading issues on Vercel
@@ -47,7 +46,7 @@ export async function GET() {
         title VARCHAR(255) NOT NULL,
         content TEXT NOT NULL,
         author_id INT DEFAULT NULL,
-        is_published BOOLEAN NOT NULL DEFAULT FALSE,
+        is_published BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_announcement_author FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE SET NULL
@@ -61,7 +60,7 @@ export async function GET() {
         location VARCHAR(255) DEFAULT NULL,
         category VARCHAR(100) DEFAULT NULL,
         status VARCHAR(100) DEFAULT 'Mendatang',
-        is_published BOOLEAN NOT NULL DEFAULT FALSE,
+        is_published BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )`,
       `CREATE TABLE IF NOT EXISTS achievements (
@@ -73,7 +72,7 @@ export async function GET() {
         award_date DATE DEFAULT NULL,
         image_url VARCHAR(255) DEFAULT NULL,
         description TEXT DEFAULT NULL,
-        is_published BOOLEAN NOT NULL DEFAULT FALSE,
+        is_published BOOLEAN NOT NULL DEFAULT TRUE,
         is_featured BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )`,
@@ -109,7 +108,7 @@ export async function GET() {
         id SERIAL PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         description TEXT DEFAULT NULL,
-        status VARCHAR(50) DEFAULT 'draft',
+        status VARCHAR(50) DEFAULT 'published',
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )`,
       `CREATE TABLE IF NOT EXISTS admin_activity_logs (
@@ -132,15 +131,51 @@ export async function GET() {
         id VARCHAR(255) PRIMARY KEY,
         user_id INT NOT NULL,
         expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_session_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
       )`,
-      // Migration: add new columns if they don't exist yet (safe for existing tables)
+      `CREATE TABLE IF NOT EXISTS academic_info (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        type VARCHAR(100) DEFAULT 'Umum',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS membership_registrations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        nim VARCHAR(50) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        whatsapp VARCHAR(50) NOT NULL,
+        prodi VARCHAR(255) DEFAULT NULL,
+        semester VARCHAR(20) DEFAULT NULL,
+        division_choice VARCHAR(100) DEFAULT NULL,
+        reason TEXT DEFAULT NULL,
+        experience TEXT DEFAULT NULL,
+        status VARCHAR(50) DEFAULT 'Pending',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS study_programs (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS aspirations (
+        id SERIAL PRIMARY KEY,
+        subject VARCHAR(255),
+        content TEXT,
+        status VARCHAR(50) DEFAULT 'Pending',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`,
+      // Column migrations (safe for existing tables)
       `ALTER TABLE achievements ADD COLUMN IF NOT EXISTS title VARCHAR(255) NOT NULL DEFAULT ''`,
       `ALTER TABLE achievements ADD COLUMN IF NOT EXISTS level VARCHAR(100) DEFAULT NULL`,
-      `ALTER TABLE achievements ADD COLUMN IF NOT EXISTS is_published BOOLEAN NOT NULL DEFAULT FALSE`,
+      `ALTER TABLE achievements ADD COLUMN IF NOT EXISTS is_published BOOLEAN NOT NULL DEFAULT TRUE`,
       `ALTER TABLE achievements ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT FALSE`,
-      `ALTER TABLE programs ADD COLUMN IF NOT EXISTS status VARCHAR(50) NOT NULL DEFAULT 'draft'`,
-      `ALTER TABLE events ADD COLUMN IF NOT EXISTS is_published BOOLEAN NOT NULL DEFAULT FALSE`,
+      `ALTER TABLE programs ADD COLUMN IF NOT EXISTS status VARCHAR(50) NOT NULL DEFAULT 'published'`,
+      `ALTER TABLE events ADD COLUMN IF NOT EXISTS is_published BOOLEAN NOT NULL DEFAULT TRUE`,
+      `ALTER TABLE membership_registrations ADD COLUMN IF NOT EXISTS experience TEXT DEFAULT NULL`
     ];
 
     const results: string[] = [];
@@ -154,11 +189,12 @@ export async function GET() {
     }
     
     connection.release();
-    return json({ success: true, message: 'Schema setup complete!', results });
+    return json({ success: true, message: 'Schema setup complete!', count: queries.length, results });
   } catch (error: any) {
     console.error('Setup DB Error:', error);
     return json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
 
 

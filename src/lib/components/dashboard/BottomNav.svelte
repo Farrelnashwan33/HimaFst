@@ -1,7 +1,11 @@
 <script lang="ts">
   import { page } from '$app/stores';
   
-  let { toggleMobileSidebar } = $props();
+  interface Props {
+    toggleMobileSidebar?: () => void;
+  }
+
+  let { toggleMobileSidebar = () => {} }: Props = $props();
 
   // Primary navigation items for bottom bar
   const navItems = [

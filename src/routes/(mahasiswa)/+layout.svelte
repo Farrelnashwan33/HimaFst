@@ -30,12 +30,13 @@
   />
   
   <div class="flex-1 flex flex-col min-w-0 transition-all duration-300 relative {isSidebarCollapsed ? 'lg:ml-[88px]' : 'lg:ml-[280px]'}">
-    <Topbar {toggleSidebar} {toggleMobileSidebar} user={data.user} />
+    <Topbar {isSidebarCollapsed} {toggleSidebar} {toggleMobileSidebar} user={data.user} />
     
     <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
       {@render children()}
     </main>
 
-    <BottomNav />
+    <BottomNav {toggleMobileSidebar} />
   </div>
 </div>
+

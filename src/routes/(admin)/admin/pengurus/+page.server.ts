@@ -1,11 +1,12 @@
 import type { PageServerLoad, Actions } from './$types';
 import { getDb } from '$lib/server/db';
-const db = getDb();
+import { hashPassword } from '$lib/server/auth';
 import { fail } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async () => {
+	const db = getDb();
 	try {
-		const [rows] = await db.execute(`SELECT * FROM users WHERE role = 'admin' ORDER BY created_at DESC`);
+		const [rows] = await db.execute(`SELECT id, name, name as full_name, email, role, created_at FROM users WHERE role = 'admin' ORDER BY created_at DESC`);
 		return { items: rows as any[] };
 	} catch (e) {
 		console.error(e);
@@ -15,19 +16,25 @@ export const load: PageServerLoad = async () => {
 
 export const actions: Actions = {
 	create: async ({ request, locals }) => {
+		const db = getDb();
 		const data = await request.formData();
-		const full_name = data.get('full_name');
-const email = data.get('email');
-const role = data.get('role');
+		const full_name = (data.get('full_name') as string)?.trim();
+		const email = (data.get('email') as string)?.trim();
+		const role = (data.get('role') as string) || 'admin';
+
+		if (!full_name || !email) {
+			return fail(400, { error: 'Nama lengkap dan email wajib diisi' });
+		}
 
 		try {
+			const defaultPassword = await hashPassword('himafst123');
 			await db.execute(
-				'INSERT INTO users (full_name, email, role) VALUES (?, ?, ?)',
-				[full_name, email, role]
+				'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+				[full_name, email, defaultPassword, role]
 			);
 			
 			if (locals.user?.id) {
-			  await db.execute('INSERT INTO admin_activity_logs (admin_id, action, module, description) VALUES (?, ?, ?, ?)', [locals.user.id, 'CREATE', 'Pengurus Himpunan', `Admin menambahkan data ke users`]);
+			  await db.execute('INSERT INTO admin_activity_logs (admin_id, action, module, description) VALUES (?, ?, ?, ?)', [locals.user.id, 'CREATE', 'Pengurus Himpunan', `Admin menambahkan data pengurus: ${full_name}`]);
 			}
 			
 			return { success: true };
@@ -37,6 +44,7 @@ const role = data.get('role');
 		}
 	},
 	delete: async ({ request, locals }) => {
+		const db = getDb();
 		const data = await request.formData();
 		const id = data.get('id');
 		if (!id) return fail(400, { error: 'ID tidak valid' });
@@ -54,3 +62,4 @@ const role = data.get('role');
 		}
 	}
 };
+

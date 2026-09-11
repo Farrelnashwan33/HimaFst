@@ -13,32 +13,32 @@ export interface RegistrationData {
 
 export class RegistrationService {
   /**
-   * Submit registration data.
-   * Currently mocked to simulate API call.
-   * Ready to be connected to Supabase/PostgreSQL/MySQL.
+   * Submit registration data to backend API.
    */
   static async submitRegistration(data: RegistrationData): Promise<{ success: boolean; message?: string }> {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
     try {
-      // Basic validation check to simulate backend validation
       if (!data.fullName || !data.nim || !data.whatsapp || !data.email) {
-        throw new Error("Missing required fields");
+        throw new Error("Semua kolom wajib diisi.");
       }
       
       if (!data.dataConsent) {
-        throw new Error("Must consent to data usage");
+        throw new Error("Anda harus menyetujui pernyataan persetujuan data.");
       }
       
-      // In the future, this is where you'd call fetch('/api/register', ...) 
-      // or use Supabase client: supabase.from('registrations').insert([data])
-      console.log('Registration submitted:', data);
-      
-      return { success: true };
+      const response = await fetch('/api/pendaftaran', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+      return result;
     } catch (error: any) {
       console.error('Registration failed:', error);
       return { success: false, message: error.message || 'Terjadi kesalahan saat mendaftar' };
     }
   }
 }
+

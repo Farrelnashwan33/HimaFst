@@ -1,5 +1,12 @@
 <script lang="ts">
-  let { isSidebarCollapsed, toggleSidebar, toggleMobileSidebar, user } = $props();
+  interface Props {
+    isSidebarCollapsed?: boolean;
+    toggleSidebar?: () => void;
+    toggleMobileSidebar?: () => void;
+    user?: { id: number; email: string; role: string } | null;
+  }
+
+  let { isSidebarCollapsed = false, toggleSidebar = () => {}, toggleMobileSidebar = () => {}, user = null }: Props = $props();
   
   let isProfileOpen = $state(false);
   

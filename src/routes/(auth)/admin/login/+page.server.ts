@@ -10,7 +10,7 @@ export const actions: Actions = {
     const password = data.get('password') as string;
 
     if (!email || !password) {
-      return fail(400, { email, error: 'Email and password are required' });
+      return fail(400, { email, error: 'Email dan password wajib diisi' });
     }
 
     try {
@@ -18,18 +18,19 @@ export const actions: Actions = {
       const [rows]: any = await db.query('SELECT * FROM users WHERE email = ?', [email]);
       
       if (rows.length === 0) {
-        return fail(400, { email, error: 'Invalid email or password' });
+        return fail(400, { email, error: 'Email atau password tidak valid' });
       }
 
       const user = rows[0];
 
       if (user.role !== 'admin') {
-        return fail(403, { email, error: 'Access denied. Administrator privileges required.' });
+        return fail(403, { email, error: 'Akses ditolak. Memerlukan hak akses Administrator.' });
       }
 
-      const validPassword = await verifyPassword(password, user.password_hash);
+      const userHash = user.password || user.password_hash;
+      const validPassword = userHash ? await verifyPassword(password, userHash) : false;
       if (!validPassword) {
-        return fail(400, { email, error: 'Invalid email or password' });
+        return fail(400, { email, error: 'Email atau password tidak valid' });
       }
 
       const sessionId = await createSession(user.id);
@@ -42,11 +43,13 @@ export const actions: Actions = {
         secure: process.env.NODE_ENV === 'production'
       });
 
-    } catch (e) {
-      console.error(e);
-      return fail(500, { email, error: 'Internal server error' });
+    } catch (e: any) {
+      if (e && typeof e === 'object' && 'status' in e && e.status === 302) throw e;
+      console.error('ADMIN LOGIN ERROR:', e);
+      return fail(500, { email, error: 'Terjadi kesalahan server: ' + (e.message || 'Unknown error') });
     }
 
     throw redirect(302, '/admin/dashboard');
   }
 };
+
